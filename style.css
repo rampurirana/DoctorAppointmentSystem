@@ -22,6 +22,10 @@ body {
   line-height: 1.6;
 }
 
+html, body {
+  scroll-behavior: smooth;
+}
+
 a {
   text-decoration: none;
   color: inherit;
@@ -31,14 +35,13 @@ ul {
   list-style: none;
 }
 
-/* Containers */
 .total-container {
   max-width: var(--max-width);
   margin: auto;
   padding: 1.5rem;
 }
 
-/* Header Styles */
+/* ===========Header Styles========== */
 header {
   background-image: linear-gradient(
       to right,
@@ -51,7 +54,7 @@ header {
   color: var(--white);
 }
 
-/* Navbar */
+/* ==========Navigation container========== */
 .nav-container {
   display: flex;
   align-items: center;
@@ -87,7 +90,7 @@ header {
   border-radius: 6px;
 }
 
-/* Login Button */
+/* ==========Button==========*/
 .login-button {
   padding: 0.6rem 1.4rem;
   background-color: var(--accent-color);
@@ -102,7 +105,7 @@ header {
   color: var(--text-dark);
 }
 
-/* Header Content */
+/* ==========Header Content========== */
 .header-container {
   display: flex;
   align-items: center;
@@ -143,7 +146,7 @@ header {
   color: var(--text-dark);
 }
 
-/* Header Image */
+/* ==========Header Image========== */
 .header-image {
   flex: 1 1 45%;
   text-align: center;
@@ -154,7 +157,7 @@ header {
   height: auto;
 }
 
-/* Responsive Design */
+/* ==========Navigation & Header container Responsive=========== */
 @media (max-width: 1024px) {
   .header-container {
     flex-direction: column-reverse;
@@ -195,7 +198,7 @@ header {
   }
 
   .nav-link {
-    flex-direction: row; /* ✅ Keep links in a row */
+    flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.8rem;
@@ -204,5 +207,75 @@ header {
 
   .login-button {
     align-self: flex-start;
+  }
+}
+
+/* ===========Service Container========== */
+.service-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.service-grid{
+  margin-top: 4rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.service-card{
+  padding: 2rem;
+  text-align: center;
+  border-radius: 10px;
+  box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.service-card span{
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 10px 20px;
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+  border-radius: 100%;
+  transition: 0.3s;
+}
+
+.service-card h4{
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.service-card p{
+  margin-bottom: 1rem;
+  color: var(--text-light);
+}
+
+.service-card a{
+  color: var(--primary-color);
+}
+
+.service-card a:hover{
+  color: var(--primary-color-dark);
+}
+
+.service-card:hover span{
+  color: var(--primary-color-light);
+  background-color: var(--primary-color);
+}
+
+@media (width < 600px){
+  .service-header{
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .service-grid{
+    grid-template-columns: repeat(1, 1fr);
   }
 }
