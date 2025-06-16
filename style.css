@@ -269,6 +269,13 @@ header {
   background-color: var(--primary-color);
 }
 
+.section-header{
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
 @media (width < 600px){
   .service-header{
     flex-direction: column;
@@ -276,6 +283,79 @@ header {
   }
 
   .service-grid{
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
+
+/* ==========Doctors Container========== */
+.doctors-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.doctors-header-content{
+  max-width: 600px;
+  color: var(--text-light);
+}
+
+.doctors-nav{
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.doctors-nav span{
+  padding: 5px 15px;
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  background-color: var(--primary-light);
+  cursor: pointer;
+}
+
+.doctors-nav span:hover{
+  color: var(--white);
+  background-color: var(--primary-dark);
+}
+
+.doctors-grid{
+  margin-top: 4rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.doctors-card{
+  text-align: center;
+  box-shadow: 5px 5px 20px  rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.doctors-card-image{
+  position: relative;
+  overflow: hidden;
+}
+
+.doctors-card img {
+  width: 100%;
+  display: flex;
+}
+
+@media (width < 600px){
+  .doctors-grid{
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .doctors-header{
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .doctors-grid{
     grid-template-columns: repeat(1, 1fr);
   }
 }
