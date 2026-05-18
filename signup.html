@@ -334,16 +334,24 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name, email, password, role })
                     });
-                    const data = await response.json();
-                    if(response.ok) {
-                        alert("Registered Successfully!");
-                        window.location.href = "index.html";
-                    } else {
-                        alert("Error: " + data.error);
+                    
+                    if (!response.ok) {
+                        const text = await response.text();
+                        try {
+                            const errorData = JSON.parse(text);
+                            alert("Error: " + errorData.error);
+                        } catch(e) {
+                            alert("Server returned an error (" + response.status + "). Check Render logs.");
+                        }
+                        return;
                     }
+
+                    const data = await response.json();
+                    alert("Registered Successfully!");
+                    window.location.href = "index.html";
                 } catch (err) {
                     console.error(err);
-                    alert("Failed to connect to backend server.");
+                    alert("Network Error: Make sure your Render backend is completely deployed and running.");
                 }
             });
         }
