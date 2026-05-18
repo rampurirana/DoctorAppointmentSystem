@@ -37,7 +37,7 @@
                 <div class="form_box">
                     <h1 class="title">Login Here</h1>
                     <div class="underline"></div>
-                    <form action="">
+                    <form id="loginForm">
                         <div class="input_group">
                             <div class="input_field">
                                 <i class="fa-solid fa-envelope"></i>
@@ -302,6 +302,37 @@
                 }
             }
         });
+
+        // API Fetch logic for Login
+        const loginForm = document.getElementById('loginForm');
+        if(loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.querySelector('input[placeholder="Email"]').value;
+                const password = document.querySelector('input[placeholder="Password"]').value;
+                
+                try {
+                    // Replace with your actual Render URL later
+                    const backendUrl = 'https://doctor-backend-yrry.onrender.com';
+                    const response = await fetch(backendUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await response.json();
+                    if(response.ok) {
+                        alert("Login Successful!");
+                        // Optionally redirect to user dashboard
+                        // window.location.href = "User Dashboard/index.html";
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Failed to connect to backend server.");
+                }
+            });
+        }
     </script>
 </body>
 </html>
