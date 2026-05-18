@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book appointment</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <!-- =============== Navigation ================ -->
+    <div class="container">
+        <div class="navigation">
+            <ul>
+                <li>
+                    <a href="#">
+                        <div class="nav_logo"> <strong>Noorie <span>Clinic</strong><span></span></div>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="dashboard.html">
+                        <span class="icon">
+                            <ion-icon name="home-outline"></ion-icon>
+                        </span>
+                        <span class="title">Dashboard</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="appointment.html">
+                        <span class="icon">
+                            <ion-icon name="alarm-outline"></ion-icon>
+                        </span>
+                        <span class="title">Book Appointments</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="notification.html">
+                        <span class="icon">
+                            <ion-icon name="notifications-outline"></ion-icon>
+                        </span>
+                        <span class="title">Notifications</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="profile.html">
+                        <span class="icon">
+                            <ion-icon name="person-outline"></ion-icon>
+                        </span>
+                        <span class="title">Manage Profile</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="password.html">
+                        <span class="icon">
+                            <ion-icon name="lock-closed-outline"></ion-icon>
+                        </span>
+                        <span class="title">Change Password</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#">
+                        <span class="icon">
+                            <ion-icon name="log-out-outline"></ion-icon>
+                        </span>
+                        <span class="title">Log Out</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- ========================= Main ==================== -->
+        <div class="main">
+            <div class="topbar">
+                <div class="toggle">
+                    <ion-icon name="menu-outline"></ion-icon>
+                </div>
+
+                <div class="search">
+                    <label>
+                        <input type="text" placeholder="Search here">
+                        <ion-icon name="search-outline"></ion-icon>
+                    </label>
+                </div>
+
+                <div class="user">
+                    <img src="customer01.jpg" alt="">
+                </div>
+            </div>
+
+            <!-- ================ Appointments Details List ================= -->
+            <div class="form_header">
+                <div class="form_box">
+                    <form action="">
+                        <div class="input_group">
+                            <div class="input_field">
+                                <i class="fa-solid fa-user"></i>
+                                <input type="text" name="" required placeholder="Enter Patient Name">
+                            </div>
+    
+                            <div class="input_field">
+                                <i class="fa-solid fa-calendar-days"></i>
+                                <input type="text" onfocus="this.type='date'" name="" required placeholder="Select Appointment Date">
+                            </div>
+    
+                            <div class="input_field">
+                                <i class="fa-solid fa-clock"></i>
+                                <label for="selecttime"></label>
+                                <select id="selecttime" name="" required
+                                anchange="updatePlaceholder">
+                                    <option value="" disabled selected>Select Appointment Time</option>
+                                    <option value="time">10:00 AM</option>
+                                    <option value="time">11:00 AM</option>
+                                    <option value="time">12:00 PM</option>
+                                    <option value="time">02:00 PM</option>
+                                    <option value="time">03:00 PM</option>
+                                    <option value="time">04:00 PM</option>
+                                </select>
+                            </div>
+                            <div class="input_field">
+                                <i class="fa-solid fa-stethoscope"></i>
+                                <label for="selectdoctortype"></label>
+                                <select id="selectdoctortype" name="" required anchange="updatePlaceholder">
+                                    <option value="" disabled selected>Select Doctor Type</option>
+                                    <option value="doctortype">Cardiologist</option>
+                                    <option value="doctortype">Dermatologist</option>
+                                    <option value="doctortype">Neurologist</option>
+                                    <option value="doctortype">Pediatrician</option>
+                                    <option value="doctortype">Orthopedist</option>
+                                </select>
+                            </div>
+    
+                            <div class="input_field">
+                                <i class="fa-solid fa-user-doctor"></i>
+                                <label for="selectdoctor"></label>
+                                <select id="selectdoctor" name="" required anchange="updatePlaceholder">
+                                    <option value="" disabled selected>Select Doctor</option>
+                                    <option value="doctor">Dr. Rampravesh Rana</option>
+                                    <option value="doctor">Dr. Ashish Rana</option>
+                                    <option value="doctor">Dr. Aryan Rana</option>
+                                    <option value="doctor">Dr. Neeraj Pandit</option>
+                                    <option value="doctor">Dr. Shubham Singh</option>
+                                    <option value="doctor">Dr. Suraj Rana</option>
+                                    <option value="doctor">Dr. Pankaj Yadav</option>
+                                    <option value="doctor">Dr. Himanshu Rana</option>
+                                    <option value="doctor">Dr. Baleshwar Rana</option>
+                                    <option value="doctor">Dr. Sunil Rana</option>
+                                    <option value="doctor">Dr. Anushka Rana</option>
+                                </select>
+                            </div>
+                        
+                            <div class="button_field">
+                                <button type="submit">Book Appointment</button>
+                            </div>
+                        </div> <!--end input group-->
+                    </form> <!--end form-->
+                </div> <!--end form box-->
+            </div>
+
+        </div>
+    </div>
+
+    <!-- =========== Scripts =========  -->
+    <script src="index.js"></script>
+
+    <!-- ====== ionicons ======= -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+
+</html>

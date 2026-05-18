@@ -1,0 +1,560 @@
+/* =========== Google Fonts ============ */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+/* =============== Globals ============== */
+* {
+  font-family: "Poppins", sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary-color: #12ac8e;
+  --primary-color-dark: #0d846c;
+  --primary-color-light: #e9f7f7;
+  --secondary-color: #fb923c;
+  --text-dark: #333333;
+  --text-light: #767268;
+  --white: #ffffff;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.container {
+  position: relative;
+  width: 100%;
+}
+
+/* =============== Navigation ================ */
+.nav_logo{
+  margin-top: 10px;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--white);
+}
+
+.nav_logo span{
+  color: var(--secondary-color);
+}
+
+.navigation {
+  position: fixed;
+  width: 300px;
+  height: 100%;
+  background: var(--primary-color-dark);
+  border-left: 10px solid var(--primary-color-dark);
+  transition: 0.5s;
+  overflow: hidden;
+}
+.navigation.active {
+  width: 80px;
+}
+
+.navigation ul {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.navigation ul li {
+  position: relative;
+  width: 100%;
+  list-style: none;
+  border-top-left-radius: 30px;
+  border-bottom-left-radius: 30px;
+}
+
+.navigation ul li:hover,
+.navigation ul li.hovered {
+  background-color: var(--white);
+}
+
+.navigation ul li:nth-child(1) {
+  margin-bottom: 40px;
+  pointer-events: none;
+}
+
+.navigation ul li a {
+  position: relative;
+  display: block;
+  width: 100%;
+  display: flex;
+  text-decoration: none;
+  color: var(--white);
+}
+.navigation ul li:hover a,
+.navigation ul li.hovered a {
+  color: var(--secondary-color);
+}
+
+.navigation ul li a .icon {
+  position: relative;
+  display: block;
+  min-width: 60px;
+  height: 60px;
+  line-height: 75px;
+  text-align: center;
+}
+.navigation ul li a .icon ion-icon {
+  font-size: 1.75rem;
+}
+
+.navigation ul li a .title {
+  position: relative;
+  display: block;
+  padding: 0 10px;
+  height: 60px;
+  line-height: 60px;
+  text-align: start;
+  white-space: nowrap;
+}
+
+/* --------- curve outside ---------- */
+.navigation ul li:hover a::before,
+.navigation ul li.hovered a::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -50px;
+  width: 50px;
+  height: 50px;
+  background-color: transparent;
+  border-radius: 50%;
+  box-shadow: 35px 35px 0 10px var(--white);
+  pointer-events: none;
+}
+.navigation ul li:hover a::after,
+.navigation ul li.hovered a::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -50px;
+  width: 50px;
+  height: 50px;
+  background-color: transparent;
+  border-radius: 50%;
+  box-shadow: 35px -35px 0 10px var(--white);
+  pointer-events: none;
+}
+
+/* ===================== Main ===================== */
+.main {
+  position: absolute;
+  width: calc(100% - 300px);
+  left: 300px;
+  min-height: 100vh;
+  background: var(--white);
+  transition: 0.5s;
+}
+.main.active {
+  width: calc(100% - 80px);
+  left: 80px;
+}
+
+.topbar {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.toggle {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2.5rem;
+  cursor: pointer;
+}
+
+.search {
+  position: relative;
+  width: 400px;
+  margin: 0 10px;
+}
+
+.search label {
+  position: relative;
+  width: 100%;
+}
+
+.search label input {
+  width: 100%;
+  height: 40px;
+  border-radius: 40px;
+  padding: 5px 20px;
+  padding-left: 35px;
+  font-size: 18px;
+  outline: none;
+  border: 1px solid var(--text-dark);
+}
+
+.search label ion-icon {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  font-size: 1.2rem;
+}
+
+.user {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.user img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ======================= Cards ====================== */
+.cardBox {
+  position: relative;
+  width: 100%;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 30px;
+}
+
+.cardBox .card {
+  position: relative;
+  background: var(--primary-color-light);
+  padding: 30px;
+  border-radius: 20px;
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 7px 25px rgba(0, 0, 0, 0.08);
+}
+
+.cardBox .card .numbers {
+  position: relative;
+  font-weight: 500;
+  font-size: 2.5rem;
+  color: var(--text-dark);
+}
+
+.cardBox .card .cardName {
+  color: var(--text-dark);
+  font-size: 1.1rem;
+  margin-top: 5px;
+}
+
+.cardBox .card .iconBx {
+  font-size: 3.5rem;
+  color: var(--text-dark);
+}
+
+.cardBox .card:hover {
+  background: var(--secondary-color);
+}
+.cardBox .card:hover .numbers,
+.cardBox .card:hover .cardName,
+.cardBox .card:hover .iconBx {
+  color: var(--primary-color-light);
+}
+
+/* ================== Order Details List ============== */
+.details {
+  position: relative;
+  width: 100%;
+  padding: 20px;
+}
+
+.details .recentOrders {
+  position: relative;
+  display: grid;
+  min-height: 500px;
+  background: var(--primary-color-light);
+  padding: 20px;
+  box-shadow: 0 7px 25px rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+}
+
+.details .cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.cardHeader h2 {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+.cardHeader .btn {
+  position: relative;
+  padding: 5px 10px;
+  background: var(--primary-color);
+  text-decoration: none;
+  color: var(--primary-color-light);
+  border-radius: 6px;
+}
+
+.details table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.details table thead td {
+  font-weight: 600;
+}
+.details .recentOrders table tr {
+  color: var(--text-dark);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+.details .recentOrders table tr:last-child {
+  border-bottom: none;
+}
+.details .recentOrders table tbody tr:hover {
+  background: var(--secondary-color);
+  color: var(--primary-color-light);
+}
+.details .recentOrders table tr td {
+  padding: 10px;
+}
+.details .recentOrders table tr td:last-child {
+  text-align: end;
+}
+.details .recentOrders table tr td:nth-child(2) {
+  text-align: end;
+}
+.details .recentOrders table tr td:nth-child(3) {
+  text-align: center;
+}
+.status.accept {
+  padding: 2px 4px;
+  background: #0f8e03;
+  color: var(--white);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.status.pending {
+  padding: 2px 4px;
+  background: #a5a502;
+  color: var(--white);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.status.reject {
+  padding: 2px 4px;
+  background: #f00;
+  color: var(--white);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ============== Notification Design ============== */
+.notification {
+  border-bottom: 1px solid #ddd;
+  padding: 5px;
+}
+
+.notification_set{
+  margin-top: 10px;
+}
+
+.notification:last-child {
+  border-bottom: none;
+}
+
+.notification .time {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  text-align: right;
+}
+
+.details .recentOrders .notification:hover {
+  background: var(--secondary-color);
+  color: var(--primary-color-light);
+}
+
+/* ============== Change Password ============== */
+.password_header{
+  position: relative;
+  width: 100%;
+  padding: 20px;
+}
+
+.password_main{
+  text-align: center;
+  position: relative;
+  background: var(--primary-color-light);
+  padding: 20px;
+  box-shadow: 0 7px 25px rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+}
+
+.password_input input{
+  color: var(--primary-color);
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 12px 15px;
+  font-size: 16px;
+}
+
+.password_input ion-icon{
+  color: var(--primary-color);
+  margin-left: 15px;
+  font-size: 18px;
+}
+
+.password_input input::placeholder{
+  color: var(--primary-color);
+}
+
+.password_input{
+  background-color: var(--white);
+  margin: 15px 0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  max-height: 60px;
+  transition: max-height 0.5s;
+  overflow: hidden;
+}
+
+.button_field button{
+  padding: 0.75rem 2rem;
+  outline: none;
+  border: none;
+  font-size: 1rem;
+  white-space: nowrap;
+  color: var(--white);
+  background-color: var(--primary-color);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* ============== Profile Section ============== */
+.profile_container{
+  position: relative;
+  width: 100%;
+  padding: 20px;
+}
+
+.profile_main{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  position: relative;
+  background: var(--primary-color-light);
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 7px 25px rgba(0, 0, 0, 0.08);
+}
+
+.profile_left, .profile_right{
+  flex: 1;
+}
+
+.form_row{
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+.form_row input {
+  width: 100%;
+  padding: 5px;
+  margin-top: 3px;
+  background-color: var(--white);
+  color: var(--primary-color);
+  border-radius: 10px;
+  border-color: var(--white);
+  font-size: 15px;
+  border-style: solid;
+}
+
+.image_upload {
+  text-align: center;
+  color: rgb(31, 29, 29);
+  font-size: 16px;
+}
+
+.image_upload img{
+  border-radius: 50%;
+}
+
+.image_upload input{
+  padding: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ====================== Responsive Design ========================== */
+@media (max-width: 991px) {
+  .main {
+    width: 100%;
+    left: 0;
+  }
+  .main.active {
+    left: 80px;
+  }
+  .cardBox {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .details {
+    grid-template-columns: 1fr;
+  }
+  .recentOrders {
+    overflow-x: auto;
+  }
+  .status.inProgress {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardBox {
+    grid-template-columns: repeat(1, 1fr);
+  }
+  .cardHeader h2 {
+    font-size: 20px;
+  }
+  .user {
+    min-width: 40px;
+  }
+  .navigation {
+    width: 100%;
+    left: -100%;
+    z-index: 1000;
+  }
+  .navigation.active {
+    width: 100%;
+    left: 0;
+  }
+  .toggle {
+    z-index: 10001;
+  }
+  .main.active .toggle {
+    color: #fff;
+    position: fixed;
+    right: 0;
+    left: initial;
+  }
+}

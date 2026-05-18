@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <!-- =============== Navigation ================ -->
+    <div class="container">
+        <div class="navigation">
+            <ul>
+                <li>
+                    <a href="#">
+                        <div class="nav_logo"> <strong>Noorie <span>Clinic</strong><span></span></div>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="dashboard.html">
+                        <span class="icon">
+                            <ion-icon name="home-outline"></ion-icon>
+                        </span>
+                        <span class="title">Dashboard</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="appointment.html">
+                        <span class="icon">
+                            <ion-icon name="alarm-outline"></ion-icon>
+                        </span>
+                        <span class="title">Book Appointments</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="notification.html">
+                        <span class="icon">
+                            <ion-icon name="notifications-outline"></ion-icon>
+                        </span>
+                        <span class="title">Notifications</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="profile.html">
+                        <span class="icon">
+                            <ion-icon name="person-outline"></ion-icon>
+                        </span>
+                        <span class="title">Manage Profile</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="password.html">
+                        <span class="icon">
+                            <ion-icon name="lock-closed-outline"></ion-icon>
+                        </span>
+                        <span class="title">Change Password</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#">
+                        <span class="icon">
+                            <ion-icon name="log-out-outline"></ion-icon>
+                        </span>
+                        <span class="title">Log Out</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- ========================= Main ==================== -->
+        <div class="main">
+            <div class="topbar">
+                <div class="toggle">
+                    <ion-icon name="menu-outline"></ion-icon>
+                </div>
+
+                <div class="search">
+                    <label>
+                        <input type="text" placeholder="Search here">
+                        <ion-icon name="search-outline"></ion-icon>
+                    </label>
+                </div>
+
+                <div class="user">
+                    <img src="customer01.jpg" alt="">
+                </div>
+            </div>
+        
+            <!-- =============== Profile Section =============== -->
+            <div class="profile_container">
+                <div class="profile_main">
+                    <div class="profile_left">
+                        <form action="">
+                            <div class="form_grid">
+                                <div class="form_row">
+                                    <label for="name">Name</label>
+                                    <input type="text" id="name" value="RAMPRAVESH RANA">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="mobile">Mobile Number</label>
+                                    <input type="tel" id="mobile" value="+91 6204996033">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="email">Email ID</label>
+                                    <input type="email" id="email" value="rampraveshrana1435@gmail.com">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="gender">Gender<label>
+                                    <input type="text" id="gender" value="MALE">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="aadhaar">Aadhaar Number</label>
+                                    <input type="text" id="aadhaar" value="908041083824">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="blood_group">Blood Group</label>
+                                    <input type="text" id="blood_group" value="Blood Group O+">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="country">Country<label>
+                                    <input type="text" id="country" value="INDIA">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="state">State</label>
+                                    <input type="text" id="state" value="JHARKHAND">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="district">District</label>
+                                    <input type="text" id="district" value="HAZARIBAGH">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="pincode">Pin Code</label>
+                                    <input type="text" id="pincode" value="825323">
+                                </div>
+                            </div>
+
+                            <div class="update_button">
+                                <button type="submit">Update Profile</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <script src="index.js"></script>
+
+    <!-- ====== ionicons ======= -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+
+</html>

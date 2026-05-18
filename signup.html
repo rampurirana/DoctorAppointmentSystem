@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.4.0/fonts/remixicon.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <header>
+        <nav class="section_container nav_container">
+            <div class="nav_logo"><strong>Noorie <span>Clinic</strong></span></div>
+            <ul class="nav_links" id="nav-links">
+                <li class="link"><a href="#home">Home</a></li>
+                <li class="link"><a href="#service">Services</a></li>
+                <li class="link"><a href="#doctor">Doctors</a></li>
+                <li class="link"><a href="#blog">Blogs</a></li>
+                <li class="link"><a href="#about">About</a></li>
+                <button class="button"><a href="index.html">Login Here</a></button>
+            </ul> <!--End nav links-->
+            <div class="nav_menu_btn" id="menu-btn"><i class="ri-menu-line"></i></div>
+        </nav> <!--End section container-->
+
+        <div class="section_container header_container" id="home">
+            <div class="header_content">
+                <h1>Providing an Experience Doctor for Your Health</h1>
+                <p>
+                    Welcome to the official website of Noori Clinic, where you will find experienced doctors as well as well-trained and caring nurses. Trust our doctors for your health and book your appointment now.
+                </p>
+                <button class="button"><a href="service.html">See Services</a></button>
+            </div> <!--end header content-->
+
+            <div class="header_form">
+                <div class="form_box">
+                    <h1 class="title">Register Here</h1>
+                    <div class="underline"></div>
+                    <form action="submit.html">
+                        <div class="input_group">
+                            <div class="input_field namefield">
+                                <i class="fa-solid fa-user"></i>
+                                <input type="text" name="" required placeholder="Name">
+                            </div>
+
+                            <div class="input_field">
+                                <i class="fa-solid fa-envelope"></i>
+                                <input type="email" name="" required placeholder="Email">
+                            </div>
+
+                            <div class="input_field">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="password" name="" required placeholder="Password">
+                            </div>
+
+                            <div class="input_field">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="password" name="" required placeholder="Confirm Password">
+                            </div>
+
+                            <div class="input_field">
+                                <i class="fa-solid fa-circle-user"></i>
+                                <label for="selectrole"></label>
+                                <select id="selectrole" name="" required anchange="updatePlaceholder">
+                                    <option value="" disabled selected>Select Role</option>
+                                    <option value="User">User</option>
+                                    <option value="Doctor">Doctor</option>
+                                </select>
+                            </div>
+                            
+                            <p><span class="text">Password Suggestions </span><a href="suggestion.html"> Click here!</a></p>
+    
+                            <div class="button_field">
+                                <button type="submit" class="signupbutton">Submit</button>
+                            </div>
+                        </div> <!--end input group-->
+                    </form> <!--end form-->
+                </div> <!--end form box-->
+            </div> <!--end header form-->
+        </div> <!--end header container-->
+    </header> <!--End header-->
+
+    <section class="section_container service_container" id="service">
+        <div class="service_header">
+            <div class="service_header_content">
+                <h2 class="section_header">Our Special Services</h2>
+            </div> <!--end service header content-->
+        </div> <!--end service header-->
+        <div class="service_grid">
+            <div class="service_card">
+                <span><i class="ri-microscope-line"></i></span>
+                <h4>Diagnostics Test</h4>
+                <p>
+                    We provide a range of diagnostic tests to assess your health and detect underlying conditions. These tests play a crucial role in early detection, accurate diagnosis, and personalized treatment planning for your health.
+                </p>
+                <a href="#">Learn More</a>
+            </div> <!--end first service card-->
+
+            <div class="service_card">
+                <span><i class="ri-mental-health-line"></i></span>
+                <h4>Health Test</h4>
+                <p>
+                    We offer a comprehensive range of health tests to assess your well-being, detect potential health issues, and monitor your overall health. These tests serve various purposes, from early disease detection to treatment planning.
+                </p>
+                <a href="#">Learn More</a>
+            </div> <!--end second service card-->
+
+            <div class="service_card">
+                <span><i class="ri-hospital-line"></i></span>
+                <h4>Emergency Service</h4>
+                <p>
+                    Emergency services are a vital component of healthcare, responding to urgent calls for help 24/7 in nearly every community. At our clinic, we prioritize immediate, unscheduled medical care for patients facing critical situations.
+                </p>
+                <a href="#">Learn More</a>
+            </div> <!--End third service card-->
+        </div> <!--end service grid-->
+    </section> <!--end section & service container-->
+
+    <section class="section_container doctors_container" id="doctor">
+        <div class="doctors_header">
+            <div class="doctors_header_content">
+                <h2 class="section_header">Our Special Doctors</h2>
+                <p>
+                    Our specialized doctors bring years of experience and cutting-edge knowledge to the table. Whether it is cardiology, pediatrics, or dermatology, we have got you covered.
+                </p>
+            </div> <!--end doctors header content-->
+            <div class="doctors_nav">
+                <span><i class="ri-arrow-left-line"></i></span>
+                <span><i class="ri-arrow-right-line"></i></span>
+            </div> <!--rnd doctors nav-->
+        </div> <!--end doctors header-->
+        <div class="doctors_grid">
+            <div class="doctors_card">
+                <div class="doctors_card_image">
+                    <img src="doctor-1.jpg" alt="doctor">
+                </div> <!--end doctors card image-->
+                <h4>Dr. Athena Kerr</h4>
+                <p>Cardiologist</p>
+            </div> <!--end first doctors card-->
+
+            <div class="doctors_card">
+                <div class="doctors_card_image">
+                    <img src="doctor-2.jpg" alt="doctor">
+                </div> <!--end doctors card image-->
+                <h4>Dr. Peter Josh</h4>
+                <p>Neurosurgeon</p>
+            </div> <!--end second doctors card-->
+
+            <div class="doctors_card">
+                <div class="doctors_card_image">
+                    <img src="doctor-3.jpg" alt="doctor">
+                </div> <!--end doctors card image-->
+                <h4>Dr. Martin Burg</h4>
+                <p>Dermatologist</p>
+            </div> <!--end third doctors card-->
+        </div> <!--end doctors grid-->
+    </section> <!--end doctors container-->
+
+    <section class="section_container why_container" id="blog">
+        <div class="why_image">
+            <img src="choose-us.jpg" alt="why choose us">
+        </div>
+        <div class="why_content">
+            <h2 class="section_header">Why Choose Us</h2>
+            <p>
+                Our team of specialized doctors brings years of experience and cutting-edge knowledge to every appointment. Whether you need routine check-ups or complex treatments, we have got you covered.
+            </p>
+            <div class="why_grid">
+                <span><i class="ri-hand-heart-line"> </i></span>
+                <div>
+                    <h4>Intensive Care</h4>
+                    <p>
+                        Our Intensive Care Unit is equipped with advanced technology and staffed by team of professionals.
+                    </p>
+                </div>
+
+                <span><i class="ri-truck-line"></i></span>
+                <div>
+                    <h4>Free Ambulance</h4>
+                    <p>
+                        A compassionate initiative to prioritize your health and well-being without any financial burden.
+                    </p>
+                </div>
+
+                <span><i class="ri-hospital-line"></i></span>
+                <div>
+                    <h4>Medical and Surgical</h4>
+                    <p>
+                        Our Medical and Surgical services offer advanced healthcare solutions to address medical needs.
+                    </p>
+                </div>
+            </div> <!--end why grid-->
+        </div> <!--end why content-->
+    </section> <!--end why container-->
+
+    <section class="section_container about_container" id="about">
+        <div class="about_content">
+            <h2 class="section_header">About Us</h2>
+            <p>
+                Welcome to our healthcare website, your one-stop destination for reliable and comprehensive health care information. We are committed to promoting wellness and providing valuable resources to empower you on your health journey.
+            </p>
+            <p>
+                Explore our extensive collection of expertly written articles and guides covering a wide range of health topics. From understanding common medical conditions to tips for maintaining a healthy lifestyle, our content is designed to educate, inspire, and support you in making informed choices for your health.
+            </p>
+            <p>
+                Discover practical health tips and lifestyle advice to optimize your physical and mental well-being. We believe that small changes can lead to significant improvements in your quality of life, and we're here to guide you on your path to a healthier and happier you.
+            </p>
+        </div> <!--end about content-->
+        <div class="about_image">
+            <img src="about.jpg" alt="about">
+        </div>
+    </section> <!--end about container-->
+
+    <footer class="footer">
+        <div class="section_container footer_container">
+            <div class="footer_col">
+                <h3>Noori <span>Clinic</span></h3>
+                <p>
+                    We are honored to be a part of your healthcare journey and committed to delivering compassionate, personalized, and top-notch care every step of the way.
+                </p>
+                <p>
+                    Trust us with your health, and let us work together to achieve the best possible outcomes for you and your loved ones.
+                </p>
+            </div>  <!--end footer column-->
+
+            <div class="footer_col">
+                <h4>About Us</h4>
+                <p>Home</p>
+                <p>About Us</p>
+                <p>Work With Us</p>
+                <p>Our Blog</p>
+                <p>Terms & Conditions</p>
+            </div>
+
+            <div class="footer_col">
+                <h4>Services</h4>
+                <p>Search Terms</p>
+                <p>Advance Search</p>
+                <p>Privacy Policy</p>
+                <p>Suppliers</p>
+                <p>Our Stores</p>
+            </div>
+
+            <div class="footer_col">
+                <h4>Contact Us</h4>
+                <p>
+                  <i class="ri-map-pin-2-fill"></i> 123, Keshwari Jhanda Chowk, Jharkhand, India
+                </p>
+                <p><i class="ri-mail-fill"></i> support@care.com</p>
+                <p><i class="ri-phone-fill"></i> +91 9999999999</p>
+            </div>
+        </div> <!--end footer container-->
+
+        <div class="footer_bar">
+            <div class="footer_bar_content">
+              <p>Copyright © <span id="current-date-time">2024</span> Noorie Clinic. All rights reserved.</p>
+              <div style="display: flex; align-items: center; gap: 1.5rem;">
+                  <button class="button" style="padding: 0.5rem 1rem;"><a href="https://rampraveshrana.vercel.app">Contact Developer</a></button>
+                  <div class="footer_socials">
+                    <span><i class="ri-instagram-line"></i></span>
+                    <span><i class="ri-facebook-fill"></i></span>
+                    <span><i class="ri-heart-fill"></i></span>
+                    <span><i class="ri-twitter-fill"></i></span>
+                  </div>
+              </div>
+            </div>
+        </div>
+    </footer> <!--end footer container-->
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const navLinks = document.getElementById('nav-links');
+        menuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
+        });
+
+        // Live Date and Time Update
+        const dateTimeSpan = document.getElementById('current-date-time');
+        const updateDateTime = () => {
+            const now = new Date();
+            dateTimeSpan.textContent = now.toLocaleString(undefined, { 
+                year: 'numeric', month: 'short', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit', second: '2-digit' 
+            });
+        };
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // Dynamic Navbar Background
+        const navContainer = document.querySelector('.nav_container');
+        window.addEventListener('scroll', () => {
+            const elements = document.elementsFromPoint(window.innerWidth / 2, navContainer.offsetHeight + 10);
+            let currentSection = null;
+            for (let el of elements) {
+                if (el.tagName === 'HEADER' || el.tagName === 'SECTION' || el.tagName === 'FOOTER') {
+                    currentSection = el;
+                    break;
+                }
+            }
+            if (currentSection) {
+                if (currentSection.tagName === 'HEADER') {
+                    navContainer.style.background = 'var(--primary-color-dark)';
+                    navContainer.classList.remove('scrolled-nav');
+                } else {
+                    const bgColor = window.getComputedStyle(currentSection).backgroundColor;
+                    const isWhite = bgColor === 'rgba(0, 0, 0, 0)' || bgColor === 'rgb(255, 255, 255)';
+                    navContainer.style.background = isWhite ? '#ffffff' : bgColor;
+                    navContainer.classList.add('scrolled-nav');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
