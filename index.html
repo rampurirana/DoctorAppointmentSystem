@@ -330,30 +330,31 @@
                         
                         const bypass = confirm("Server returned: " + errMsg + "\n\nWould you like to use 'Direct Login' (Offline Mock Mode) to test the dashboard?");
                         if (bypass) {
+                            localStorage.clear();
                             localStorage.setItem("userId", "mock_user");
                             localStorage.setItem("userName", "Demo Patient");
-                            window.location.href = "User Dashboard/dashboard.html";
+                            window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
                         }
                         return;
                     }
 
                     const data = await response.json();
-                    alert("Login Successful!");
                     
-                    // Persist user session details
+                    // Reset localStorage to prevent caching issues from other users
+                    localStorage.clear();
                     localStorage.setItem("userId", data.user.id);
                     localStorage.setItem("userName", data.user.name);
                     
-                    // Redirect to User Dashboard
-                    window.location.href = "User Dashboard/dashboard.html";
+                    // Redirect with cache buster to force fresh data load
+                    window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
                 } catch (err) {
                     console.error(err);
                     const bypass = confirm("Could not connect to the live backend server (Render might be sleeping or spinning up).\n\nWould you like to use 'Direct Login' (Offline Mock Mode) to test the dashboard?");
                     if (bypass) {
-                        alert("Offline Mode Enabled! Logging in directly...");
+                        localStorage.clear();
                         localStorage.setItem("userId", "mock_user");
                         localStorage.setItem("userName", "Demo Patient");
-                        window.location.href = "User Dashboard/dashboard.html";
+                        window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
                     }
                 }
             });
