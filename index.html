@@ -322,11 +322,17 @@
 
                     if (!response.ok) {
                         const text = await response.text();
+                        let errMsg = "Server error (" + response.status + ").";
                         try {
                             const errorData = JSON.parse(text);
-                            alert("Error: " + errorData.error);
-                        } catch(e) {
-                            alert("Server returned an error (" + response.status + "). Check Render logs.");
+                            errMsg = errorData.error;
+                        } catch(e) {}
+                        
+                        const bypass = confirm("Server returned: " + errMsg + "\n\nWould you like to use 'Direct Login' (Offline Mock Mode) to test the dashboard?");
+                        if (bypass) {
+                            localStorage.setItem("userId", "mock_user");
+                            localStorage.setItem("userName", "Demo Patient");
+                            window.location.href = "User Dashboard/dashboard.html";
                         }
                         return;
                     }
@@ -342,7 +348,13 @@
                     window.location.href = "User Dashboard/dashboard.html";
                 } catch (err) {
                     console.error(err);
-                    alert("Network Error: Make sure your Render backend is completely deployed and running.");
+                    const bypass = confirm("Could not connect to the live backend server (Render might be sleeping or spinning up).\n\nWould you like to use 'Direct Login' (Offline Mock Mode) to test the dashboard?");
+                    if (bypass) {
+                        alert("Offline Mode Enabled! Logging in directly...");
+                        localStorage.setItem("userId", "mock_user");
+                        localStorage.setItem("userName", "Demo Patient");
+                        window.location.href = "User Dashboard/dashboard.html";
+                    }
                 }
             });
         }

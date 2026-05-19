@@ -245,85 +245,132 @@
             window.location.href = "../index.html";
         }
 
+        const isMockMode = userId === "mock_user";
         const backendUrl = "https://doctor-backend-yrry.onrender.com";
 
         // Fetch User profile to welcome them
         async function fetchWelcome() {
+            if (isMockMode) {
+                renderWelcome("Demo Patient");
+                return;
+            }
             try {
                 const res = await fetch(`${backendUrl}/api/user/${userId}`);
                 if (res.ok) {
                     const user = await res.json();
-                    const searchBar = document.querySelector('.search');
-                    if (searchBar) {
-                        const welcomeText = document.createElement('h3');
-                        welcomeText.style.color = 'var(--primary-color-dark)';
-                        welcomeText.style.marginRight = '20px';
-                        welcomeText.style.fontSize = '1.1rem';
-                        welcomeText.style.fontWeight = '600';
-                        welcomeText.innerText = `Welcome, ${user.name}!`;
-                        searchBar.parentElement.insertBefore(welcomeText, searchBar);
-                    }
+                    renderWelcome(user.name);
                 }
             } catch (err) {
                 console.error(err);
+                renderWelcome(localStorage.getItem("userName") || "Valued Patient");
+            }
+        }
+
+        function renderWelcome(name) {
+            const searchBar = document.querySelector('.search');
+            if (searchBar) {
+                // Prevent duplicate welcome text on hot reload
+                const existing = document.getElementById("welcomeTextCard");
+                if (existing) existing.remove();
+
+                const welcomeText = document.createElement('h3');
+                welcomeText.id = "welcomeTextCard";
+                welcomeText.style.color = 'var(--primary-color-dark)';
+                welcomeText.style.marginRight = '20px';
+                welcomeText.style.fontSize = '1.1rem';
+                welcomeText.style.fontWeight = '600';
+                welcomeText.innerText = `Welcome, ${name}!`;
+                searchBar.parentElement.insertBefore(welcomeText, searchBar);
             }
         }
 
         // Fetch dashboard statistics
         async function fetchStats() {
+            if (isMockMode) {
+                const customMockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
+                let success = 12;
+                let pending = 3 + customMockApps.filter(a => a.status.toLowerCase() === "pending").length;
+                let reject = 1;
+                renderStats({ success, pending, reject });
+                return;
+            }
             try {
                 const res = await fetch(`${backendUrl}/api/user/${userId}/stats`);
                 if (res.ok) {
                     const stats = await res.json();
-                    const cards = document.querySelectorAll('.cardBox .card .numbers');
-                    if (cards.length >= 3) {
-                        cards[0].innerText = stats.success;
-                        cards[1].innerText = stats.pending;
-                        cards[2].innerText = stats.reject;
-                    }
+                    renderStats(stats);
                 }
             } catch (err) {
                 console.error(err);
+                renderStats({ success: 0, pending: 0, reject: 0 });
+            }
+        }
+
+        function renderStats(stats) {
+            const cards = document.querySelectorAll('.cardBox .card .numbers');
+            if (cards.length >= 3) {
+                cards[0].innerText = stats.success;
+                cards[1].innerText = stats.pending;
+                cards[2].innerText = stats.reject;
             }
         }
 
         // Fetch and display recent appointments
         async function fetchAppointments() {
+            if (isMockMode) {
+                const mockAppointments = [
+                    { doctor_name: "Dr. Rampravesh Rana", doctor_type: "Cardiologist", appointment_date: "2026-05-20", appointment_time: "10:00 AM", status: "Accepted" },
+                    { doctor_name: "Dr. Aryan Rana", doctor_type: "Dermatologist", appointment_date: "2026-05-22", appointment_time: "02:00 PM", status: "Pending" },
+                    { doctor_name: "Dr. Pankaj Yadav", doctor_type: "Orthopedist", appointment_date: "2026-05-18", appointment_time: "04:00 PM", status: "Rejected" }
+                ];
+                // Append custom booked mock appointments
+                const customMockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
+                renderAppointments([...customMockApps, ...mockAppointments]);
+                return;
+            }
             try {
                 const res = await fetch(`${backendUrl}/api/user/${userId}/appointments`);
                 if (res.ok) {
                     const appointments = await res.json();
-                    const tbody = document.querySelector('.details table tbody');
-                    if (tbody) {
-                        tbody.innerHTML = ""; // Clear placeholders
-                        
-                        if (appointments.length === 0) {
-                            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;">No appointments found. Click "Book Appointments" to get started!</td></tr>`;
-                            return;
-                        }
-
-                        // Take only first 10 for dashboard
-                        appointments.slice(0, 10).forEach(app => {
-                            const tr = document.createElement('tr');
-                            const dateStr = new Date(app.appointment_date).toLocaleDateString();
-                            
-                            let statusClass = "pending";
-                            if (app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'accept') statusClass = "accept";
-                            else if (app.status.toLowerCase() === 'rejected' || app.status.toLowerCase() === 'reject') statusClass = "reject";
-
-                            tr.innerHTML = `
-                                <td>${app.doctor_name}</td>
-                                <td>${app.doctor_type}</td>
-                                <td>${dateStr}</td>
-                                <td>${app.appointment_time}</td>
-                                <td><span class="status ${statusClass}">${app.status}</span></td>
-                            `;
-                            tbody.appendChild(tr);
-                        });
-                    }
+                    renderAppointments(appointments);
                 }
             } catch (err) {
                 console.error(err);
+                const tbody = document.querySelector('.details table tbody');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--secondary-color);">Failed to fetch live appointments from server.</td></tr>`;
+                }
+            }
+        }
+
+        function renderAppointments(appointments) {
+            const tbody = document.querySelector('.details table tbody');
+            if (tbody) {
+                tbody.innerHTML = ""; // Clear placeholders
+                
+                if (appointments.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;">No appointments found. Click "Book Appointments" to get started!</td></tr>`;
+                    return;
+                }
+
+                // Take only first 10 for dashboard
+                appointments.slice(0, 10).forEach(app => {
+                    const tr = document.createElement('tr');
+                    const dateStr = new Date(app.appointment_date).toLocaleDateString();
+                    
+                    let statusClass = "pending";
+                    if (app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'accept') statusClass = "accept";
+                    else if (app.status.toLowerCase() === 'rejected' || app.status.toLowerCase() === 'reject') statusClass = "reject";
+
+                    tr.innerHTML = `
+                        <td>${app.doctor_name}</td>
+                        <td>${app.doctor_type}</td>
+                        <td>${dateStr}</td>
+                        <td>${app.appointment_time}</td>
+                        <td><span class="status ${statusClass}">${app.status}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             }
         }
 

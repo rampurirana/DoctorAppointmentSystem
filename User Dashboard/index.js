@@ -1,6 +1,25 @@
-// Get current page filename to automatically highlight active tab
+// Bulletproof Session Security Check (Handles back-button and page cache recovery)
+window.addEventListener("pageshow", function (event) {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+        window.location.replace("../index.html");
+    }
+});
+
 const currentPage = window.location.pathname.split("/").pop();
 const navLinks = document.querySelectorAll(".navigation li a");
+
+// Dynamic Logout Listener
+document.addEventListener("DOMContentLoaded", () => {
+    const logoutLink = document.querySelector(".navigation li a[href*='index.html']");
+    if (logoutLink) {
+        logoutLink.addEventListener("click", function(e) {
+            e.preventDefault();
+            localStorage.clear(); // Clear all user session data
+            window.location.replace("../index.html"); // Redirect and replace history
+        });
+    }
+});
 
 function highlightActiveTab() {
     let matched = false;

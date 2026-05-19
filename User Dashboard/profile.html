@@ -175,25 +175,45 @@
 
         // Fetch profile data on page load
         async function fetchProfile() {
+            if (userId === "mock_user") {
+                const defaultProfile = {
+                    name: "Demo Patient",
+                    mobile: "+91 9999999999",
+                    email: "demopatient@gmail.com",
+                    gender: "MALE",
+                    aadhaar: "123456789012",
+                    blood_group: "O+",
+                    country: "INDIA",
+                    state: "JHARKHAND",
+                    district: "HAZARIBAGH",
+                    pincode: "825301"
+                };
+                const mockProfile = JSON.parse(localStorage.getItem("mock_profile")) || defaultProfile;
+                populateProfile(mockProfile);
+                return;
+            }
             try {
                 const response = await fetch(`${backendUrl}/api/user/${userId}`);
                 if (response.ok) {
                     const user = await response.json();
-                    
-                    document.getElementById("name").value = user.name || "";
-                    document.getElementById("mobile").value = user.mobile || "";
-                    document.getElementById("email").value = user.email || "";
-                    document.getElementById("gender").value = user.gender || "";
-                    document.getElementById("aadhaar").value = user.aadhaar || "";
-                    document.getElementById("blood_group").value = user.blood_group || "";
-                    document.getElementById("country").value = user.country || "INDIA";
-                    document.getElementById("state").value = user.state || "";
-                    document.getElementById("district").value = user.district || "";
-                    document.getElementById("pincode").value = user.pincode || "";
+                    populateProfile(user);
                 }
             } catch (err) {
                 console.error(err);
             }
+        }
+
+        function populateProfile(user) {
+            document.getElementById("name").value = user.name || "";
+            document.getElementById("mobile").value = user.mobile || "";
+            document.getElementById("email").value = user.email || "";
+            document.getElementById("gender").value = user.gender || "";
+            document.getElementById("aadhaar").value = user.aadhaar || "";
+            document.getElementById("blood_group").value = user.blood_group || "";
+            document.getElementById("country").value = user.country || "INDIA";
+            document.getElementById("state").value = user.state || "";
+            document.getElementById("district").value = user.district || "";
+            document.getElementById("pincode").value = user.pincode || "";
         }
 
         // Bind form submission to update profile
@@ -212,6 +232,17 @@
                 const state = document.getElementById("state").value;
                 const district = document.getElementById("district").value;
                 const pincode = document.getElementById("pincode").value;
+
+                if (userId === "mock_user") {
+                    alert("Profile Updated Successfully! (Offline Mock Mode)");
+                    const mockProfile = {
+                        name, mobile, email, gender, aadhaar, blood_group, country, state, district, pincode
+                    };
+                    localStorage.setItem("mock_profile", JSON.stringify(mockProfile));
+                    localStorage.setItem("userName", name);
+                    location.reload();
+                    return;
+                }
 
                 try {
                     const response = await fetch(`${backendUrl}/api/user/${userId}`, {

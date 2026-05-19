@@ -198,6 +198,31 @@
                 const selectDoctor = document.getElementById("selectdoctor");
                 const doctorName = selectDoctor.options[selectDoctor.selectedIndex].text;
 
+                if (userId === "mock_user") {
+                    alert("Appointment Booked Successfully! (Offline Mock Mode)");
+                    
+                    const mockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
+                    mockApps.unshift({
+                        doctor_name: doctorName,
+                        doctor_type: doctorType,
+                        appointment_date: appointmentDate,
+                        appointment_time: appointmentTime,
+                        status: "Pending"
+                    });
+                    localStorage.setItem("mock_appointments", JSON.stringify(mockApps));
+                    
+                    // Log an offline notification too!
+                    const mockNotifs = JSON.parse(localStorage.getItem("mock_notifications") || "[]");
+                    mockNotifs.unshift({
+                        message: `Appointment for ${patientName} with ${doctorName} booked successfully on ${appointmentDate} at ${appointmentTime}. Status: Pending.`,
+                        created_at: new Date().toISOString()
+                    });
+                    localStorage.setItem("mock_notifications", JSON.stringify(mockNotifs));
+
+                    window.location.href = "dashboard.html";
+                    return;
+                }
+
                 try {
                     const response = await fetch(`${backendUrl}/api/appointments`, {
                         method: "POST",

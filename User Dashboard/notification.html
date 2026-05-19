@@ -179,37 +179,49 @@
 
         // Fetch and display live notifications
         async function fetchNotifications() {
+            if (userId === "mock_user") {
+                const sampleNotifications = [
+                    { message: "Welcome to Noorie Clinic, Demo Patient! Your account has been registered successfully.", created_at: new Date(Date.now() - 3600000 * 24).toISOString() },
+                    { message: "Your security profile details were loaded successfully.", created_at: new Date(Date.now() - 3600000).toISOString() }
+                ];
+                const customNotifs = JSON.parse(localStorage.getItem("mock_notifications") || "[]");
+                renderNotifications([...customNotifs, ...sampleNotifications]);
+                return;
+            }
             try {
                 const res = await fetch(`${backendUrl}/api/user/${userId}/notifications`);
                 if (res.ok) {
                     const notifications = await res.json();
-                    const container = document.querySelector(".notification_set");
-                    if (container) {
-                        container.innerHTML = ""; // Clear placeholders
-
-                        if (notifications.length === 0) {
-                            container.innerHTML = `<div class="notification" style="text-align: center; padding: 20px;"><p>No notifications yet.</p></div>`;
-                            return;
-                        }
-
-                        notifications.forEach(notif => {
-                            const div = document.createElement("div");
-                            div.className = "notification";
-                            
-                            // Format relative time (e.g. "Just now", or standard date)
-                            const dateObj = new Date(notif.created_at);
-                            const relativeTime = dateObj.toLocaleString();
-
-                            div.innerHTML = `
-                                <p>${notif.message}</p>
-                                <span class="time">${relativeTime}</span>
-                            `;
-                            container.appendChild(div);
-                        });
-                    }
+                    renderNotifications(notifications);
                 }
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        function renderNotifications(notifications) {
+            const container = document.querySelector(".notification_set");
+            if (container) {
+                container.innerHTML = ""; // Clear placeholders
+
+                if (notifications.length === 0) {
+                    container.innerHTML = `<div class="notification" style="text-align: center; padding: 20px;"><p>No notifications yet.</p></div>`;
+                    return;
+                }
+
+                notifications.forEach(notif => {
+                    const div = document.createElement("div");
+                    div.className = "notification";
+                    
+                    const dateObj = new Date(notif.created_at);
+                    const relativeTime = dateObj.toLocaleString();
+
+                    div.innerHTML = `
+                        <p>${notif.message}</p>
+                        <span class="time">${relativeTime}</span>
+                    `;
+                    container.appendChild(div);
+                });
             }
         }
 
