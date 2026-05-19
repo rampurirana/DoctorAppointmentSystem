@@ -171,8 +171,7 @@
         // Session security check
         const userId = localStorage.getItem("userId");
         if (!userId) {
-            alert("Please log in first.");
-            window.location.href = "../index.html";
+            window.location.replace("../index.html");
         }
 
         const backendUrl = "https://doctor-backend-yrry.onrender.com";

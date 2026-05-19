@@ -241,8 +241,7 @@
         // Session security check
         const userId = localStorage.getItem("userId");
         if (!userId) {
-            alert("Please log in first.");
-            window.location.href = "../index.html";
+            window.location.replace("../index.html");
         }
 
         const isMockMode = userId === "mock_user";
