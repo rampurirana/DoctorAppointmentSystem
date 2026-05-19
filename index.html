@@ -333,8 +333,13 @@
 
                     const data = await response.json();
                     alert("Login Successful!");
-                    // Optionally redirect to user dashboard
-                    // window.location.href = "User Dashboard/index.html";
+                    
+                    // Persist user session details
+                    localStorage.setItem("userId", data.user.id);
+                    localStorage.setItem("userName", data.user.name);
+                    
+                    // Redirect to User Dashboard
+                    window.location.href = "User Dashboard/dashboard.html";
                 } catch (err) {
                     console.error(err);
                     alert("Network Error: Make sure your Render backend is completely deployed and running.");

@@ -14,7 +14,7 @@
             <ul>
                 <li>
                     <a href="#">
-                        <div class="nav_logo"> <strong>Noorie <span>Clinic</strong><span></span></div>
+                        <div class="nav_logo"> <strong>Noorie <span>Clinic</span></strong></div>
                     </a>
                 </li>
 
@@ -64,7 +64,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a href="../index.html">
                         <span class="icon">
                             <ion-icon name="log-out-outline"></ion-icon>
                         </span>
@@ -236,6 +236,102 @@
 
     <!-- =========== Scripts =========  -->
     <script src="index.js"></script>
+
+    <script>
+        // Session security check
+        const userId = localStorage.getItem("userId");
+        if (!userId) {
+            alert("Please log in first.");
+            window.location.href = "../index.html";
+        }
+
+        const backendUrl = "https://doctor-backend-yrry.onrender.com";
+
+        // Fetch User profile to welcome them
+        async function fetchWelcome() {
+            try {
+                const res = await fetch(`${backendUrl}/api/user/${userId}`);
+                if (res.ok) {
+                    const user = await res.json();
+                    const searchBar = document.querySelector('.search');
+                    if (searchBar) {
+                        const welcomeText = document.createElement('h3');
+                        welcomeText.style.color = 'var(--primary-color-dark)';
+                        welcomeText.style.marginRight = '20px';
+                        welcomeText.style.fontSize = '1.1rem';
+                        welcomeText.style.fontWeight = '600';
+                        welcomeText.innerText = `Welcome, ${user.name}!`;
+                        searchBar.parentElement.insertBefore(welcomeText, searchBar);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Fetch dashboard statistics
+        async function fetchStats() {
+            try {
+                const res = await fetch(`${backendUrl}/api/user/${userId}/stats`);
+                if (res.ok) {
+                    const stats = await res.json();
+                    const cards = document.querySelectorAll('.cardBox .card .numbers');
+                    if (cards.length >= 3) {
+                        cards[0].innerText = stats.success;
+                        cards[1].innerText = stats.pending;
+                        cards[2].innerText = stats.reject;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Fetch and display recent appointments
+        async function fetchAppointments() {
+            try {
+                const res = await fetch(`${backendUrl}/api/user/${userId}/appointments`);
+                if (res.ok) {
+                    const appointments = await res.json();
+                    const tbody = document.querySelector('.details table tbody');
+                    if (tbody) {
+                        tbody.innerHTML = ""; // Clear placeholders
+                        
+                        if (appointments.length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;">No appointments found. Click "Book Appointments" to get started!</td></tr>`;
+                            return;
+                        }
+
+                        // Take only first 10 for dashboard
+                        appointments.slice(0, 10).forEach(app => {
+                            const tr = document.createElement('tr');
+                            const dateStr = new Date(app.appointment_date).toLocaleDateString();
+                            
+                            let statusClass = "pending";
+                            if (app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'accept') statusClass = "accept";
+                            else if (app.status.toLowerCase() === 'rejected' || app.status.toLowerCase() === 'reject') statusClass = "reject";
+
+                            tr.innerHTML = `
+                                <td>${app.doctor_name}</td>
+                                <td>${app.doctor_type}</td>
+                                <td>${dateStr}</td>
+                                <td>${app.appointment_time}</td>
+                                <td><span class="status ${statusClass}">${app.status}</span></td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Run fetchers
+        fetchWelcome();
+        fetchStats();
+        fetchAppointments();
+    </script>
 
     <!-- ====== ionicons ======= -->
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>

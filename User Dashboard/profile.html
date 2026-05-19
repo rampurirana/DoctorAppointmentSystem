@@ -15,7 +15,7 @@
             <ul>
                 <li>
                     <a href="#">
-                        <div class="nav_logo"> <strong>Noorie <span>Clinic</strong><span></span></div>
+                        <div class="nav_logo"> <strong>Noorie <span>Clinic</span></strong></div>
                     </a>
                 </li>
 
@@ -65,7 +65,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a href="../index.html">
                         <span class="icon">
                             <ion-icon name="log-out-outline"></ion-icon>
                         </span>
@@ -98,7 +98,7 @@
             <div class="profile_container">
                 <div class="profile_main">
                     <div class="profile_left">
-                        <form action="">
+                        <form id="profileForm">
                             <div class="form_grid">
                                 <div class="form_row">
                                     <label for="name">Name</label>
@@ -116,7 +116,7 @@
                                 </div>
 
                                 <div class="form_row">
-                                    <label for="gender">Gender<label>
+                                    <label for="gender">Gender</label>
                                     <input type="text" id="gender" value="MALE">
                                 </div>
 
@@ -131,7 +131,7 @@
                                 </div>
 
                                 <div class="form_row">
-                                    <label for="country">Country<label>
+                                    <label for="country">Country</label>
                                     <input type="text" id="country" value="INDIA">
                                 </div>
 
@@ -162,6 +162,93 @@
         </div>
     </div>
     <script src="index.js"></script>
+
+    <script>
+        // Session security check
+        const userId = localStorage.getItem("userId");
+        if (!userId) {
+            alert("Please log in first.");
+            window.location.href = "../index.html";
+        }
+
+        const backendUrl = "https://doctor-backend-yrry.onrender.com";
+
+        // Fetch profile data on page load
+        async function fetchProfile() {
+            try {
+                const response = await fetch(`${backendUrl}/api/user/${userId}`);
+                if (response.ok) {
+                    const user = await response.json();
+                    
+                    document.getElementById("name").value = user.name || "";
+                    document.getElementById("mobile").value = user.mobile || "";
+                    document.getElementById("email").value = user.email || "";
+                    document.getElementById("gender").value = user.gender || "";
+                    document.getElementById("aadhaar").value = user.aadhaar || "";
+                    document.getElementById("blood_group").value = user.blood_group || "";
+                    document.getElementById("country").value = user.country || "INDIA";
+                    document.getElementById("state").value = user.state || "";
+                    document.getElementById("district").value = user.district || "";
+                    document.getElementById("pincode").value = user.pincode || "";
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Bind form submission to update profile
+        const form = document.getElementById("profileForm");
+        if (form) {
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById("name").value;
+                const mobile = document.getElementById("mobile").value;
+                const email = document.getElementById("email").value;
+                const gender = document.getElementById("gender").value;
+                const aadhaar = document.getElementById("aadhaar").value;
+                const blood_group = document.getElementById("blood_group").value;
+                const country = document.getElementById("country").value;
+                const state = document.getElementById("state").value;
+                const district = document.getElementById("district").value;
+                const pincode = document.getElementById("pincode").value;
+
+                try {
+                    const response = await fetch(`${backendUrl}/api/user/${userId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            name,
+                            mobile,
+                            email,
+                            gender,
+                            aadhaar,
+                            blood_group,
+                            country,
+                            state,
+                            district,
+                            pincode
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert("Profile Updated Successfully!");
+                        localStorage.setItem("userName", name);
+                        location.reload();
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Network Error: Could not connect to the profile server.");
+                }
+            });
+        }
+
+        // Load profile
+        fetchProfile();
+    </script>
 
     <!-- ====== ionicons ======= -->
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
