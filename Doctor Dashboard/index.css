@@ -271,6 +271,88 @@ body {
   color: var(--primary-color-light);
 }
 
+/* Specific card colors according to the status */
+#card-success {
+  background: #e8f7e8;
+  border: 1px solid rgba(15, 142, 3, 0.15);
+  transition: all 0.3s ease;
+}
+#card-success .numbers,
+#card-success .iconBx {
+  color: #0f8e03;
+}
+#card-success .cardName {
+  color: #1c6815;
+}
+#card-success:hover,
+#card-success.active-filter {
+  background: #0f8e03 !important;
+  transform: scale(1.03);
+  box-shadow: 0 10px 30px rgba(15, 142, 3, 0.25);
+}
+#card-success:hover .numbers,
+#card-success:hover .cardName,
+#card-success:hover .iconBx,
+#card-success.active-filter .numbers,
+#card-success.active-filter .cardName,
+#card-success.active-filter .iconBx {
+  color: var(--white) !important;
+}
+
+#card-pending {
+  background: #fdfbe7;
+  border: 1px solid rgba(165, 165, 2, 0.15);
+  transition: all 0.3s ease;
+}
+#card-pending .numbers,
+#card-pending .iconBx {
+  color: #a5a502;
+}
+#card-pending .cardName {
+  color: #6b6b06;
+}
+#card-pending:hover,
+#card-pending.active-filter {
+  background: #a5a502 !important;
+  transform: scale(1.03);
+  box-shadow: 0 10px 30px rgba(165, 165, 2, 0.25);
+}
+#card-pending:hover .numbers,
+#card-pending:hover .cardName,
+#card-pending:hover .iconBx,
+#card-pending.active-filter .numbers,
+#card-pending.active-filter .cardName,
+#card-pending.active-filter .iconBx {
+  color: var(--white) !important;
+}
+
+#card-reject {
+  background: #ffebeb;
+  border: 1px solid rgba(255, 0, 0, 0.12);
+  transition: all 0.3s ease;
+}
+#card-reject .numbers,
+#card-reject .iconBx {
+  color: #f00;
+}
+#card-reject .cardName {
+  color: #b31919;
+}
+#card-reject:hover,
+#card-reject.active-filter {
+  background: #f00 !important;
+  transform: scale(1.03);
+  box-shadow: 0 10px 30px rgba(255, 0, 0, 0.25);
+}
+#card-reject:hover .numbers,
+#card-reject:hover .cardName,
+#card-reject:hover .iconBx,
+#card-reject.active-filter .numbers,
+#card-reject.active-filter .cardName,
+#card-reject.active-filter .iconBx {
+  color: var(--white) !important;
+}
+
 /* ================== Order Details List ============== */
 .details {
   position: relative;
@@ -548,13 +630,34 @@ body {
     width: 100%;
     left: 0;
   }
-  .toggle {
-    z-index: 10001;
+}
+
+/* Close button for mobile navigation */
+.nav-close-btn {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  .nav-close-btn {
+    display: flex;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--white);
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 1010;
+    transition: all 0.3s ease;
   }
-  .main.active .toggle {
-    color: #fff;
-    position: fixed;
-    right: 0;
-    left: initial;
+  .nav-close-btn:hover {
+    background: var(--white);
+    color: var(--primary-color-dark);
+    transform: scale(1.05);
   }
 }

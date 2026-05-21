@@ -5,6 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
     <link rel="stylesheet" href="index.css">
+    <style>
+        /* Topbar Responsiveness Fix */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 15px;
+        }
+
+        #welcomeTextCard {
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px !important;
+        }
+
+        @media (max-width: 768px) {
+            #welcomeTextCard {
+                font-size: 0.9rem !important;
+                max-width: 120px; /* Further limit name width on tablets */
+            }
+            .search {
+                flex: 1; /* Allow search to take remaining space */
+                max-width: 180px;
+                margin: 0 5px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #welcomeTextCard {
+                display: none; /* Hide name on small mobiles to prioritize search and toggle */
+            }
+            .search {
+                margin: 0 5px !important;
+            }
+        }
+
+        .cardBox .card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .details .recentOrders {
+            min-height: auto !important;
+        }
+
+        /* Specific card colors according to the status */
+        #card-success {
+            background: #e8f7e8;
+            border: 1px solid rgba(15, 142, 3, 0.15);
+        }
+        #card-success .numbers,
+        #card-success .iconBx {
+            color: #0f8e03;
+        }
+        #card-success .cardName {
+            color: #1c6815;
+        }
+        #card-success:hover,
+        #card-success.active-filter {
+            background: #0f8e03 !important;
+            transform: scale(1.03);
+            box-shadow: 0 10px 30px rgba(15, 142, 3, 0.25);
+        }
+        #card-success:hover .numbers,
+        #card-success:hover .cardName,
+        #card-success:hover .iconBx,
+        #card-success.active-filter .numbers,
+        #card-success.active-filter .cardName,
+        #card-success.active-filter .iconBx {
+            color: var(--white) !important;
+        }
+
+        #card-pending {
+            background: #fdfbe7;
+            border: 1px solid rgba(165, 165, 2, 0.15);
+        }
+        #card-pending .numbers,
+        #card-pending .iconBx {
+            color: #a5a502;
+        }
+        #card-pending .cardName {
+            color: #6b6b06;
+        }
+        #card-pending:hover,
+        #card-pending.active-filter {
+            background: #a5a502 !important;
+            transform: scale(1.03);
+            box-shadow: 0 10px 30px rgba(165, 165, 2, 0.25);
+        }
+        #card-pending:hover .numbers,
+        #card-pending:hover .cardName,
+        #card-pending:hover .iconBx,
+        #card-pending.active-filter .numbers,
+        #card-pending.active-filter .cardName,
+        #card-pending.active-filter .iconBx {
+            color: var(--white) !important;
+        }
+
+        #card-reject {
+            background: #ffebeb;
+            border: 1px solid rgba(255, 0, 0, 0.12);
+        }
+        #card-reject .numbers,
+        #card-reject .iconBx {
+            color: #f00;
+        }
+        #card-reject .cardName {
+            color: #b31919;
+        }
+        #card-reject:hover,
+        #card-reject.active-filter {
+            background: #f00 !important;
+            transform: scale(1.03);
+            box-shadow: 0 10px 30px rgba(255, 0, 0, 0.25);
+        }
+        #card-reject:hover .numbers,
+        #card-reject:hover .cardName,
+        #card-reject:hover .iconBx,
+        #card-reject.active-filter .numbers,
+        #card-reject.active-filter .cardName,
+        #card-reject.active-filter .iconBx {
+            color: var(--white) !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -95,7 +221,7 @@
 
             <!-- ======================= Cards ================== -->
             <div class="cardBox">
-                <div class="card">
+                <div class="card" id="card-success">
                     <div>
                         <div class="numbers">0</div>
                         <div class="cardName">Successfull Appointments</div>
@@ -106,7 +232,7 @@
                     </div>
                 </div>
 
-                <div class="card">
+                <div class="card" id="card-pending">
                     <div>
                         <div class="numbers">0</div>
                         <div class="cardName">Pending Appointments</div>
@@ -117,7 +243,7 @@
                     </div>
                 </div>
 
-                <div class="card">
+                <div class="card" id="card-reject">
                     <div>
                         <div class="numbers">0</div>
                         <div class="cardName">Rejected Appointments</div>
@@ -134,99 +260,25 @@
                 <div class="recentOrders">
                     <div class="cardHeader">
                         <h2>Recent Appointments</h2>
-                        <a href="#" class="btn">View All</a>
+                        <a href="#" class="btn" id="viewAllBtn">View All</a>
                     </div>
 
                     <table>
                         <thead>
                             <tr>
+                                <td>Patient Name</td>
                                 <td>Doctor Name</td>
                                 <td>Doctor Type</td>
-                                <td>Appointments Date</td>
-                                <td>Appointments Time</td>
+                                <td>Date</td>
+                                <td>Time</td>
                                 <td>Status</td>
                             </tr>
                         </thead>
 
                         <tbody>
                             <tr>
-                                <td>Dr. Rampravesh Rana</td>
-                                <td>Cardiologist</td>
-                                <td>10/09/2024</td>
-                                <td>01:00 PM</td>
-                                <td><span class="status accept">Accepted</span></td>
+                                <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-dark);">Loading appointments...</td>
                             </tr>
-                            <tr>
-                                <td>Dr. Ashish Rana</td>
-                                <td>Dermatologist</td>
-                                <td>10/09/2024</td>
-                                <td>12:00 PM</td>
-                                <td><span class="status reject">Rejected</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Aryan Rana</td>
-                                <td>Dermatologist</td>
-                                <td>10/09/2024</td>
-                                <td>11:00 AM</td>
-                                <td><span class="status accept">Accepted</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Neeraj Pandit</td>
-                                <td>Neurologist</td>
-                                <td>10/09/2024</td>
-                                <td>10:00 AM</td>
-                                <td><span class="status accept">Accepted</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Subham Singh</td>
-                                <td>Pediatrician</td>
-                                <td>09/09/2024</td>
-                                <td>01:00 PM</td>
-                                <td><span class="status pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Suraj Rana</td>
-                                <td>Neurologist</td>
-                                <td>09/09/2024</td>
-                                <td>12:00 AM</td>
-                                <td><span class="status pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Pankaj Yadav</td>
-                                <td>Cardiologist</td>
-                                <td>09/09/2024</td>
-                                <td>11:00 AM</td>
-                                <td><span class="status reject">Rejected</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Himanshu Rana</td>
-                                <td>Cardiologist</td>
-                                <td>09/09/2024</td>
-                                <td>10:00 AM</td>
-                                <td><span class="status accept">Accepted</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Baleshwar Rana</td>
-                                <td>Pediatrician</td>
-                                <td>08/09/2024</td>
-                                <td>01:00 PM</td>
-                                <td><span class="status reject">Rejected</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Sunil Rana</td>
-                                <td>Orthopedist</td>
-                                <td>08/09/2024</td>
-                                <td>12:00 PM</td>
-                                <td><span class="status reject">Rejected</span></td>
-                            </tr>
-                            <tr>
-                                <td>Dr. Anushka Rana</td>
-                                <td>Orthopedist</td>
-                                <td>11/09/2024</td>
-                                <td>11:00 AM</td>
-                                <td><span class="status accept">Accepted</span></td>
-                            </tr>
-                            
                         </tbody>
                     </table>
                 </div>
@@ -245,7 +297,7 @@
         }
 
         const isMockMode = userId === "mock_user";
-        const backendUrl = "https://doctor-backend-yrry.onrender.com";
+        const backendUrl = "http://localhost:10000";
 
         // Fetch User profile to welcome them
         async function fetchWelcome() {
@@ -314,32 +366,162 @@
             }
         }
 
+        // Global variables for sorting and filtering
+        let allAppointmentsData = [];
+        let currentFilter = 'all';
+        let showAllAppointments = false;
+
+        // Parse date and time to timestamp for accurate sorting
+        function parseDateTime(dateStr, timeStr) {
+            if (!dateStr) return 0;
+            
+            let dateObj = new Date(dateStr);
+            
+            // If invalid date (e.g. format issues), attempt manual parsing
+            if (isNaN(dateObj.getTime())) {
+                const cleanDate = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+                const parts = cleanDate.split(/[-/]/);
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) {
+                        // YYYY-MM-DD
+                        dateObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                    } else {
+                        // DD-MM-YYYY or MM-DD-YYYY (assume DD-MM-YYYY typical for India)
+                        dateObj = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                    }
+                }
+            }
+
+            if (isNaN(dateObj.getTime())) return 0;
+
+            let hours = 0;
+            let minutes = 0;
+            if (timeStr) {
+                const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if (match) {
+                    hours = parseInt(match[1], 10);
+                    minutes = parseInt(match[2], 10);
+                    const ampm = match[3].toUpperCase();
+                    if (ampm === "PM" && hours < 12) hours += 12;
+                    if (ampm === "AM" && hours === 12) hours = 0;
+                } else {
+                    const parts = timeStr.split(':');
+                    if (parts.length >= 2) {
+                        hours = parseInt(parts[0], 10);
+                        minutes = parseInt(parts[1], 10);
+                    }
+                }
+            }
+
+            dateObj.setHours(hours, minutes, 0, 0);
+            return dateObj.getTime();
+        }
+
         // Fetch and display recent appointments
         async function fetchAppointments() {
             if (isMockMode) {
                 const mockAppointments = [
-                    { doctor_name: "Dr. Rampravesh Rana", doctor_type: "Cardiologist", appointment_date: "2026-05-20", appointment_time: "10:00 AM", status: "Accepted" },
-                    { doctor_name: "Dr. Aryan Rana", doctor_type: "Dermatologist", appointment_date: "2026-05-22", appointment_time: "02:00 PM", status: "Pending" },
-                    { doctor_name: "Dr. Pankaj Yadav", doctor_type: "Orthopedist", appointment_date: "2026-05-18", appointment_time: "04:00 PM", status: "Rejected" }
+                    { patient_name: "Rahul Sharma", doctor_name: "Dr. Rampravesh Rana", doctor_type: "Cardiologist", appointment_date: "2026-05-20", appointment_time: "10:00 AM", status: "Accepted" },
+                    { patient_name: "Priya Singh", doctor_name: "Dr. Aryan Rana", doctor_type: "Dermatologist", appointment_date: "2026-05-22", appointment_time: "02:00 PM", status: "Pending" },
+                    { patient_name: "Amit Kumar", doctor_name: "Dr. Pankaj Yadav", doctor_type: "Orthopedist", appointment_date: "2026-05-18", appointment_time: "04:00 PM", status: "Rejected" }
                 ];
-                // Append custom booked mock appointments
                 const customMockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
-                renderAppointments([...customMockApps, ...mockAppointments]);
+                allAppointmentsData = [...customMockApps, ...mockAppointments];
+                filterAndRender();
                 return;
             }
             try {
                 const res = await fetch(`${backendUrl}/api/user/${userId}/appointments`);
                 if (res.ok) {
-                    const appointments = await res.json();
-                    renderAppointments(appointments);
+                    allAppointmentsData = await res.json();
+                    filterAndRender();
                 }
             } catch (err) {
                 console.error(err);
                 const tbody = document.querySelector('.details table tbody');
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--secondary-color);">Failed to fetch live appointments from server.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--secondary-color);">Failed to fetch live appointments from server.</td></tr>`;
                 }
             }
+        }
+
+        window.filterAndRender = filterAndRender;
+
+        function filterAndRender() {
+            let filtered = allAppointmentsData;
+
+            // Apply filter
+            if (currentFilter !== 'all') {
+                filtered = allAppointmentsData.filter(app => {
+                    const status = app.status.toLowerCase();
+                    if (currentFilter === 'accepted') {
+                        return status === 'accepted' || status === 'accept';
+                    } else if (currentFilter === 'pending') {
+                        return status === 'pending';
+                    } else if (currentFilter === 'rejected') {
+                        return status === 'rejected' || status === 'reject';
+                    }
+                    return false;
+                });
+            }
+
+            // Apply search query filter
+            const searchInput = document.querySelector('.search input');
+            const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            if (searchQuery) {
+                filtered = filtered.filter(app => {
+                    return (app.patient_name || "").toLowerCase().includes(searchQuery) ||
+                           (app.doctor_name || "").toLowerCase().includes(searchQuery) ||
+                           (app.doctor_type || "").toLowerCase().includes(searchQuery) ||
+                           (app.appointment_date || "").toLowerCase().includes(searchQuery) ||
+                           (app.appointment_time || "").toLowerCase().includes(searchQuery) ||
+                           (app.status || "").toLowerCase().includes(searchQuery);
+                });
+            }
+
+            // Expose function globally
+            window.filterAndRender = filterAndRender;
+
+            // Sort appointments:
+            // 1. Prioritize Pending appointments at the top, and Successful/Rejected at the bottom.
+            // 2. Within those status groups, sort chronologically by nearest date and time.
+            filtered.sort((a, b) => {
+                const getPriority = (status) => {
+                    const s = status.toLowerCase();
+                    if (s === 'pending') return 0; // Top priority
+                    return 1; // Lower priority (Successful/Rejected)
+                };
+
+                const priorityA = getPriority(a.status);
+                const priorityB = getPriority(b.status);
+
+                if (priorityA !== priorityB) {
+                    return priorityA - priorityB; // Show Pending first
+                }
+
+                // If priorities are the same, sort by date ascending (nearest first)
+                const dateA = parseDateTime(a.appointment_date, "");
+                const dateB = parseDateTime(b.appointment_date, "");
+                if (dateA !== dateB) {
+                    return dateA - dateB;
+                }
+                
+                // If dates are the same, sort by time ascending (earlier time slot first)
+                const timeA = parseDateTime(a.appointment_date, a.appointment_time);
+                const timeB = parseDateTime(b.appointment_date, b.appointment_time);
+                return timeA - timeB;
+            });
+
+            // Limit to 10 if not showing all
+            const displayList = showAllAppointments ? filtered : filtered.slice(0, 10);
+            
+            // Update "View All" button text
+            const viewAllBtn = document.getElementById("viewAllBtn");
+            if (viewAllBtn) {
+                viewAllBtn.innerText = showAllAppointments ? "Show Less" : "View All";
+            }
+
+            renderAppointments(displayList);
         }
 
         function renderAppointments(appointments) {
@@ -348,12 +530,11 @@
                 tbody.innerHTML = ""; // Clear placeholders
                 
                 if (appointments.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;">No appointments found. Click "Book Appointments" to get started!</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">No appointments found.</td></tr>`;
                     return;
                 }
 
-                // Take only first 10 for dashboard
-                appointments.slice(0, 10).forEach(app => {
+                appointments.forEach(app => {
                     const tr = document.createElement('tr');
                     const dateStr = new Date(app.appointment_date).toLocaleDateString();
                     
@@ -362,6 +543,7 @@
                     else if (app.status.toLowerCase() === 'rejected' || app.status.toLowerCase() === 'reject') statusClass = "reject";
 
                     tr.innerHTML = `
+                        <td>${app.patient_name || 'N/A'}</td>
                         <td>${app.doctor_name}</td>
                         <td>${app.doctor_type}</td>
                         <td>${dateStr}</td>
@@ -372,6 +554,64 @@
                 });
             }
         }
+
+        // Setup filter handlers
+        function handleFilterChange(newFilter) {
+            currentFilter = newFilter;
+
+            // Sync card active states
+            const cardSuccess = document.getElementById("card-success");
+            const cardPending = document.getElementById("card-pending");
+            const cardReject = document.getElementById("card-reject");
+
+            if (cardSuccess) cardSuccess.classList.remove("active-filter");
+            if (cardPending) cardPending.classList.remove("active-filter");
+            if (cardReject) cardReject.classList.remove("active-filter");
+
+            if (newFilter === "accepted" && cardSuccess) {
+                cardSuccess.classList.add("active-filter");
+            } else if (newFilter === "pending" && cardPending) {
+                cardPending.classList.add("active-filter");
+            } else if (newFilter === "rejected" && cardReject) {
+                cardReject.classList.add("active-filter");
+            }
+
+            filterAndRender();
+        }
+
+        // Add Event Listeners when DOM is loaded
+        document.addEventListener("DOMContentLoaded", () => {
+            // Card clicks
+            const cardSuccess = document.getElementById("card-success");
+            const cardPending = document.getElementById("card-pending");
+            const cardReject = document.getElementById("card-reject");
+
+            if (cardSuccess) {
+                cardSuccess.addEventListener("click", () => {
+                    handleFilterChange(currentFilter === "accepted" ? "all" : "accepted");
+                });
+            }
+            if (cardPending) {
+                cardPending.addEventListener("click", () => {
+                    handleFilterChange(currentFilter === "pending" ? "all" : "pending");
+                });
+            }
+            if (cardReject) {
+                cardReject.addEventListener("click", () => {
+                    handleFilterChange(currentFilter === "rejected" ? "all" : "rejected");
+                });
+            }
+
+            // View All / Show Less button click
+            const viewAllBtn = document.getElementById("viewAllBtn");
+            if (viewAllBtn) {
+                viewAllBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    showAllAppointments = !showAllAppointments;
+                    filterAndRender();
+                });
+            }
+        });
 
         // Run fetchers
         fetchWelcome();

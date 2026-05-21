@@ -6,6 +6,17 @@
     <title>Notification</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="index.css">
+    <style>
+        .details .recentOrders {
+            min-height: auto !important;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .notification_set {
+            transition: max-height 0.4s ease;
+            overflow: hidden;
+        }
+    </style>
 </head>
 
 <body>
@@ -99,63 +110,12 @@
                 <div class="recentOrders">
                     <div class="cardHeader">
                         <h2>Notifications</h2>
-                        <a href="#" class="btn">View All</a>
+                        <a href="#" class="btn" id="viewAllBtn">View All</a>
                     </div>
 
                     <div class="notification_set">
-                        <div class="notification">
-                            <p>Notification number : 11</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 10</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 09</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 08</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 07</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 06</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 05</p>
-                            <span class="time">50 min ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 04</p>
-                            <span class="time">40 min ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 03</p>
-                            <span class="time">30 min ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 02</p>
-                            <span class="time">20 min ago</span>
-                        </div>
-
-                        <div class="notification">
-                            <p>Notification number : 01
-                            <span class="time">10 min ago</span> </p>
+                        <div class="notification" style="text-align: center; padding: 20px;">
+                            <p>Loading notifications...</p>
                         </div>
                     </div>
                 </div>
@@ -174,7 +134,10 @@
             window.location.replace("../index.html");
         }
 
-        const backendUrl = "https://doctor-backend-yrry.onrender.com";
+        const backendUrl = "http://localhost:10000";
+        const MAX_VISIBLE = 10;
+        let allNotifications = [];
+        let showAll = false;
 
         // Fetch and display live notifications
         async function fetchNotifications() {
@@ -184,17 +147,30 @@
                     { message: "Your security profile details were loaded successfully.", created_at: new Date(Date.now() - 3600000).toISOString() }
                 ];
                 const customNotifs = JSON.parse(localStorage.getItem("mock_notifications") || "[]");
-                renderNotifications([...customNotifs, ...sampleNotifications]);
+                allNotifications = [...customNotifs, ...sampleNotifications];
+                displayNotifications();
                 return;
             }
             try {
                 const res = await fetch(`${backendUrl}/api/user/${userId}/notifications`);
                 if (res.ok) {
-                    const notifications = await res.json();
-                    renderNotifications(notifications);
+                    allNotifications = await res.json();
+                    displayNotifications();
                 }
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        function displayNotifications() {
+            const visibleList = showAll ? allNotifications : allNotifications.slice(0, MAX_VISIBLE);
+            renderNotifications(visibleList);
+
+            // Update View All button
+            const viewAllBtn = document.getElementById("viewAllBtn");
+            if (viewAllBtn) {
+                viewAllBtn.style.display = "inline-block";
+                viewAllBtn.innerText = showAll ? "Show Less" : "View All";
             }
         }
 
@@ -223,6 +199,18 @@
                 });
             }
         }
+
+        // Setup View All button
+        document.addEventListener("DOMContentLoaded", () => {
+            const viewAllBtn = document.getElementById("viewAllBtn");
+            if (viewAllBtn) {
+                viewAllBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    showAll = !showAll;
+                    displayNotifications();
+                });
+            }
+        });
 
         fetchNotifications();
     </script>

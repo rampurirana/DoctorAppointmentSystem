@@ -53,6 +53,9 @@
                                 <i class="fa-solid fa-lock"></i>
                                 <input type="password" name="" required placeholder="Password">
                             </div>
+                            <p style="font-size: 11px; color: var(--text-light); text-align: left; margin: -10px 0 15px 5px;">
+                                * Password must be at least 8 characters with letters, numbers, and symbols.
+                            </p>
 
                             <div class="input_field">
                                 <i class="fa-solid fa-lock"></i>
@@ -325,10 +328,17 @@
                     alert("Passwords do not match!");
                     return;
                 }
+
+                // Password complexity validation: 8+ chars, alphabet, number, special char
+                const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+                if (!passwordRegex.test(password)) {
+                    alert("Password must be at least 8 characters long and include alphabets, numbers, and special characters.");
+                    return;
+                }
                 
                 try {
                     // Replace with your actual Render URL later
-                    const backendUrl = 'https://doctor-backend-yrry.onrender.com/api/signup';
+                    const backendUrl = 'http://localhost:10000/api/signup';
                     const response = await fetch(backendUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

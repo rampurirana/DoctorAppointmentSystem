@@ -590,14 +590,35 @@ body {
     width: 100%;
     left: 0;
   }
-  .toggle {
-    z-index: 10001;
+}
+
+/* Close button for mobile navigation */
+.nav-close-btn {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  .nav-close-btn {
+    display: flex;
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--white);
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 1010;
+    transition: all 0.3s ease;
   }
-  .main.active .toggle {
-    color: #fff;
-    position: fixed;
-    right: 0;
-    left: initial;
+  .nav-close-btn:hover {
+    background: var(--white);
+    color: var(--primary-color-dark);
+    transform: scale(1.05);
   }
 }
 

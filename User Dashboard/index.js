@@ -76,3 +76,17 @@ if (toggle) {
         main.classList.toggle("active");
     }
 }
+
+// Dynamic Close Button for Mobile Sidebar (Inside Navigation)
+if (navigation && !document.getElementById("nav-close-btn")) {
+    const closeBtn = document.createElement("div");
+    closeBtn.className = "nav-close-btn";
+    closeBtn.id = "nav-close-btn";
+    closeBtn.innerHTML = `<ion-icon name="close-outline"></ion-icon>`;
+    navigation.appendChild(closeBtn);
+    
+    closeBtn.onclick = function () {
+        navigation.classList.remove("active");
+        if (main) main.classList.remove("active");
+    };
+}
