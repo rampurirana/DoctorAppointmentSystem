@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="stylesheet" href="../assets/app-shell.css">
+    <script src="../assets/app-shell.js"></script>
     <link rel="stylesheet" href="index.css">
     <style>
         /* Topbar Responsiveness Fix */
@@ -129,6 +132,143 @@
         #card-reject.active-filter .cardName,
         #card-reject.active-filter .iconBx {
             color: var(--white) !important;
+        }
+
+        /* Table Alignment and Gaps */
+        .details table thead td,
+        .details table tbody tr td {
+            text-align: left !important;
+            padding: 12px 15px !important;
+        }
+
+        .details table tbody tr td.no-data {
+            text-align: center !important;
+        }
+
+        /* Modern UI Hover Effect for standard table rows */
+        .details table tbody tr:hover {
+            background: var(--primary-color-light) !important;
+            color: var(--text-dark) !important;
+        }
+
+        .status.cancel {
+            padding: 2px 4px;
+            background: #6c757d; /* Muted grey for cancelled */
+            color: var(--white);
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Hover effect for pending rows */
+        .pending-row:hover {
+            background: #ffebeb !important; /* Matching the Reject card theme */
+        }
+
+        .status-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .btn-row-cancel {
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-row-cancel:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            position: relative;
+            animation: modalSlideDown 0.4s ease-out;
+        }
+
+        @keyframes modalSlideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h3 {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        .modal-content p {
+            margin-bottom: 30px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn-confirm, .btn-close {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-confirm {
+            background: #ff4d4d;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #ff3333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 77, 77, 0.4);
+        }
+
+        .btn-close {
+            background: #f0f0f0;
+            color: #555;
+        }
+
+        .btn-close:hover {
+            background: #e0e0e0;
+            color: #333;
         }
     </style>
 </head>
@@ -270,14 +410,14 @@
                                 <td>Doctor Name</td>
                                 <td>Doctor Type</td>
                                 <td>Date</td>
-                                <td>Time</td>
+                                <td>Serial No.</td>
                                 <td>Status</td>
                             </tr>
                         </thead>
 
                         <tbody>
                             <tr>
-                                <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-dark);">Loading appointments...</td>
+                                <td colspan="6" class="no-data" style="padding: 20px; color: var(--text-dark);">Loading appointments...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -286,10 +426,26 @@
         </div>
     </div>
 
+    <!-- Modal for Cancellation Confirmation -->
+    <div id="cancelModal" class="modal">
+        <div class="modal-content">
+            <h3>Confirm Cancellation</h3>
+            <p id="cancelModalText">Are you sure you want to cancel this appointment?</p>
+            <div class="modal-footer">
+                <button id="confirmCancelBtn" class="btn-confirm">Yes, Cancel</button>
+                <button id="closeModalBtn" class="btn-close">No, Keep it</button>
+            </div>
+        </div>
+    </div>
+
     <!-- =========== Scripts =========  -->
     <script src="index.js"></script>
 
     <script>
+        // Block index.js from overwriting dashboard data with its simplified logic
+        window.loadDashboardStats = () => console.log("Blocked index.js stats load");
+        window.loadRecentAppointments = () => console.log("Blocked index.js appointments load");
+
         // Session security check
         const userId = localStorage.getItem("userId");
         if (!userId) {
@@ -336,25 +492,27 @@
         }
 
         // Fetch dashboard statistics
-        async function fetchStats() {
+        function updateStats() {
+            // Calculate stats locally from allAppointmentsData for accuracy
+            let success = 0;
+            let pending = 0;
+            let reject = 0;
+
+            allAppointmentsData.forEach(app => {
+                const status = (app.status || "pending").toLowerCase();
+                if (status === 'accepted' || status === 'accept') success++;
+                else if (status === 'pending') pending++;
+                else if (status === 'rejected' || status === 'reject' || status === 'cancelled' || status === 'cancel') reject++;
+            });
+
+            // Add baseline mock data if in mock mode to maintain UI design
             if (isMockMode) {
-                const customMockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
-                let success = 12;
-                let pending = 3 + customMockApps.filter(a => a.status.toLowerCase() === "pending").length;
-                let reject = 1;
-                renderStats({ success, pending, reject });
-                return;
+                success += 12;
+                pending += 3;
+                reject += 1;
             }
-            try {
-                const res = await fetch(`${backendUrl}/api/user/${userId}/stats`);
-                if (res.ok) {
-                    const stats = await res.json();
-                    renderStats(stats);
-                }
-            } catch (err) {
-                console.error(err);
-                renderStats({ success: 0, pending: 0, reject: 0 });
-            }
+
+            renderStats({ success, pending, reject });
         }
 
         function renderStats(stats) {
@@ -372,7 +530,7 @@
         let showAllAppointments = false;
 
         // Parse date and time to timestamp for accurate sorting
-        function parseDateTime(dateStr, timeStr) {
+        function parseDateTime(dateStr, slotStr) {
             if (!dateStr) return 0;
             
             let dateObj = new Date(dateStr);
@@ -396,8 +554,8 @@
 
             let hours = 0;
             let minutes = 0;
-            if (timeStr) {
-                const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            if (slotStr) {
+                const match = slotStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
                 if (match) {
                     hours = parseInt(match[1], 10);
                     minutes = parseInt(match[2], 10);
@@ -405,7 +563,7 @@
                     if (ampm === "PM" && hours < 12) hours += 12;
                     if (ampm === "AM" && hours === 12) hours = 0;
                 } else {
-                    const parts = timeStr.split(':');
+                    const parts = slotStr.split(':');
                     if (parts.length >= 2) {
                         hours = parseInt(parts[0], 10);
                         minutes = parseInt(parts[1], 10);
@@ -421,45 +579,57 @@
         async function fetchAppointments() {
             if (isMockMode) {
                 const mockAppointments = [
-                    { patient_name: "Rahul Sharma", doctor_name: "Dr. Rampravesh Rana", doctor_type: "Cardiologist", appointment_date: "2026-05-20", appointment_time: "10:00 AM", status: "Accepted" },
-                    { patient_name: "Priya Singh", doctor_name: "Dr. Aryan Rana", doctor_type: "Dermatologist", appointment_date: "2026-05-22", appointment_time: "02:00 PM", status: "Pending" },
-                    { patient_name: "Amit Kumar", doctor_name: "Dr. Pankaj Yadav", doctor_type: "Orthopedist", appointment_date: "2026-05-18", appointment_time: "04:00 PM", status: "Rejected" }
+                    { id: "fixed_1", patient_name: "Rahul Sharma", doctor_name: "Dr. Rampravesh Rana", doctor_type: "Cardiologist", appointment_date: "2026-05-20", booking_slot: "01", status: "Accepted" },
+                    { id: "fixed_2", patient_name: "Priya Singh", doctor_name: "Dr. Aryan Rana", doctor_type: "Dermatologist", appointment_date: "2026-05-22", booking_slot: null, status: "Pending" },
+                    { id: "fixed_3", patient_name: "Amit Kumar", doctor_name: "Dr. Pankaj Yadav", doctor_type: "Orthopedist", appointment_date: "2026-05-18", booking_slot: null, status: "Rejected" }
                 ];
                 const customMockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
-                allAppointmentsData = [...customMockApps, ...mockAppointments];
+
+                // Merge logic: Prioritize localStorage data (where cancellations are stored)
+                const merged = [...customMockApps];
+                mockAppointments.forEach(mock => {
+                    if (!merged.find(m => m.id === mock.id)) {
+                        merged.push(mock);
+                    }
+                });
+
+                allAppointmentsData = merged;
                 filterAndRender();
                 return;
             }
             try {
-                const res = await fetch(`${backendUrl}/api/user/${userId}/appointments`);
+                // Added cache buster to ensure fresh data after database update
+                const res = await fetch(`${backendUrl}/api/user/${userId}/appointments?t=${Date.now()}`);
                 if (res.ok) {
                     allAppointmentsData = await res.json();
+                    console.log("Verified Backend Data:", allAppointmentsData);
                     filterAndRender();
                 }
             } catch (err) {
                 console.error(err);
                 const tbody = document.querySelector('.details table tbody');
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--secondary-color);">Failed to fetch live appointments from server.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="no-data" style="padding: 20px; color: var(--secondary-color);">Failed to fetch live appointments from server.</td></tr>`;
                 }
             }
         }
 
-        window.filterAndRender = filterAndRender;
-
         function filterAndRender() {
             let filtered = allAppointmentsData;
+
+            // Update stats cards whenever data is filtered or rendered
+            updateStats();
 
             // Apply filter
             if (currentFilter !== 'all') {
                 filtered = allAppointmentsData.filter(app => {
-                    const status = app.status.toLowerCase();
+                    const status = (app.status || "pending").toLowerCase();
                     if (currentFilter === 'accepted') {
                         return status === 'accepted' || status === 'accept';
                     } else if (currentFilter === 'pending') {
                         return status === 'pending';
                     } else if (currentFilter === 'rejected') {
-                        return status === 'rejected' || status === 'reject';
+                        return status === 'rejected' || status === 'reject' || status === 'cancelled' || status === 'cancel';
                     }
                     return false;
                 });
@@ -474,22 +644,19 @@
                            (app.doctor_name || "").toLowerCase().includes(searchQuery) ||
                            (app.doctor_type || "").toLowerCase().includes(searchQuery) ||
                            (app.appointment_date || "").toLowerCase().includes(searchQuery) ||
-                           (app.appointment_time || "").toLowerCase().includes(searchQuery) ||
+                           (app.booking_slot || app.appointment_time || "").toLowerCase().includes(searchQuery) ||
                            (app.status || "").toLowerCase().includes(searchQuery);
                 });
             }
-
-            // Expose function globally
-            window.filterAndRender = filterAndRender;
 
             // Sort appointments:
             // 1. Prioritize Pending appointments at the top, and Successful/Rejected at the bottom.
             // 2. Within those status groups, sort chronologically by nearest date and time.
             filtered.sort((a, b) => {
                 const getPriority = (status) => {
-                    const s = status.toLowerCase();
+                    const s = (status || "").toLowerCase();
                     if (s === 'pending') return 0; // Top priority
-                    return 1; // Lower priority (Successful/Rejected)
+                    return 1; // Lower priority (Successful/Rejected/Cancelled)
                 };
 
                 const priorityA = getPriority(a.status);
@@ -507,8 +674,8 @@
                 }
                 
                 // If dates are the same, sort by time ascending (earlier time slot first)
-                const timeA = parseDateTime(a.appointment_date, a.appointment_time);
-                const timeB = parseDateTime(b.appointment_date, b.appointment_time);
+                const timeA = parseDateTime(a.appointment_date, a.booking_slot || a.appointment_time);
+                const timeB = parseDateTime(b.appointment_date, b.booking_slot || b.appointment_time);
                 return timeA - timeB;
             });
 
@@ -524,13 +691,16 @@
             renderAppointments(displayList);
         }
 
+        // Expose function globally
+        window.filterAndRender = filterAndRender;
+
         function renderAppointments(appointments) {
             const tbody = document.querySelector('.details table tbody');
             if (tbody) {
                 tbody.innerHTML = ""; // Clear placeholders
                 
                 if (appointments.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">No appointments found.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="no-data" style="padding: 20px;">No appointments found.</td></tr>`;
                     return;
                 }
 
@@ -539,19 +709,101 @@
                     const dateStr = new Date(app.appointment_date).toLocaleDateString();
                     
                     let statusClass = "pending";
-                    if (app.status.toLowerCase() === 'accepted' || app.status.toLowerCase() === 'accept') statusClass = "accept";
-                    else if (app.status.toLowerCase() === 'rejected' || app.status.toLowerCase() === 'reject') statusClass = "reject";
+                    const statusLower = (app.status || "").toLowerCase();
+                    if (statusLower === 'accepted' || statusLower === 'accept') statusClass = "accept";
+                    else if (statusLower === 'rejected' || statusLower === 'reject') statusClass = "reject";
+                    else if (statusLower === 'cancelled' || statusLower === 'cancel') statusClass = "cancel";
+
+                    // Pending or accepted bookings can be cancelled; completed states stay visible.
+                    const isCancellable = statusLower === 'pending' || statusLower === 'accepted' || statusLower === 'accept';
 
                     tr.innerHTML = `
                         <td>${app.patient_name || 'N/A'}</td>
                         <td>${app.doctor_name}</td>
                         <td>${app.doctor_type}</td>
                         <td>${dateStr}</td>
-                        <td>${app.appointment_time}</td>
-                        <td><span class="status ${statusClass}">${app.status}</span></td>
+                        <td>${app.booking_slot || 'Pending assignment'}</td>
+                        <td>
+                            <div class="status-wrapper">
+                                <span class="status ${statusClass}">${app.status}</span>
+                                <button class="btn-row-cancel" ${!isCancellable ? 'disabled' : ''}>Cancel</button>
+                            </div>
+                        </td>
                     `;
+
+                    // Attach click handler always; the 'disabled' attribute will prevent firing when needed
+                    if (isCancellable) tr.classList.add('pending-row');
+                    const cancelBtn = tr.querySelector('.btn-row-cancel');
+                    if (cancelBtn) {
+                        cancelBtn.onclick = () => cancelAppointment(app.id, app.patient_name || 'the patient');
+                    }
+
                     tbody.appendChild(tr);
                 });
+            }
+        }
+
+        let pendingCancelId = null;
+
+        function cancelAppointment(appointmentId, patientName) {
+            pendingCancelId = appointmentId;
+            const modal = document.getElementById("cancelModal");
+            const modalText = document.getElementById("cancelModalText");
+            if (modal && modalText) {
+                modalText.innerText = `Are you sure you want to cancel the appointment for ${patientName}?`;
+                modal.style.display = "flex";
+            }
+        }
+
+        async function executeCancellation() {
+            if (!pendingCancelId) return;
+            const appointmentId = pendingCancelId;
+
+            const modal = document.getElementById("cancelModal");
+            if (modal) modal.style.display = "none";
+            pendingCancelId = null;
+
+            if (isMockMode) {
+                let mockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
+
+                // Find and update in localStorage, or add from hardcoded list if needed
+                const localIdx = mockApps.findIndex(a => a.id === appointmentId);
+                if (localIdx !== -1) {
+                    mockApps[localIdx].status = 'Cancelled';
+                } else {
+                    const target = allAppointmentsData.find(a => a.id === appointmentId);
+                    if (target) {
+                        mockApps.push({ ...target, status: 'Cancelled' });
+                    }
+                }
+
+                localStorage.setItem("mock_appointments", JSON.stringify(mockApps));
+                alert("Appointment status updated to Cancelled! (Offline Mode)");
+                fetchAppointments();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${backendUrl}/api/appointments/${appointmentId}/cancel`, {
+                    method: 'PATCH'
+                });
+
+                let result = {};
+                try {
+                    result = await res.json();
+                } catch(e) {
+                    console.warn("Non-JSON response received from server during cancellation");
+                }
+
+                if (res.ok) {
+                    alert(result.message || "Appointment successfully cancelled in database.");
+                    fetchAppointments();
+                } else {
+                    alert("Error: " + (result.error || "Failed to cancel"));
+                }
+            } catch (err) {
+                console.error("Cancellation error:", err);
+                alert("Network Error: Could not connect to the server.");
             }
         }
 
@@ -611,11 +863,36 @@
                     filterAndRender();
                 });
             }
+
+            // Real-time search listener
+            const searchInput = document.querySelector('.search input');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    filterAndRender();
+                });
+            }
+
+            // Modal buttons setup
+            const confirmBtn = document.getElementById("confirmCancelBtn");
+            const closeBtn = document.getElementById("closeModalBtn");
+            const modal = document.getElementById("cancelModal");
+
+            if (confirmBtn) confirmBtn.onclick = executeCancellation;
+            if (closeBtn) closeBtn.onclick = () => {
+                modal.style.display = "none";
+                pendingCancelId = null;
+            };
+
+            window.onclick = (event) => {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                    pendingCancelId = null;
+                }
+            };
         });
 
         // Run fetchers
         fetchWelcome();
-        fetchStats();
         fetchAppointments();
     </script>
 

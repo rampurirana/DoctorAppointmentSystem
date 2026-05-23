@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Here</title>
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="stylesheet" href="assets/app-shell.css">
+    <script src="assets/app-shell.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.4.0/fonts/remixicon.css">
@@ -310,6 +313,7 @@
                 e.preventDefault();
                 const email = document.querySelector('input[placeholder="Email"]').value;
                 const password = document.querySelector('input[placeholder="Password"]').value;
+                const selectedRole = document.getElementById('selectrole').value;
                 
                 try {
                     // Replace with your actual Render URL later
@@ -339,14 +343,26 @@
                     }
 
                     const data = await response.json();
+
+                    if ((data.user.role || "").toLowerCase() !== selectedRole.toLowerCase()) {
+                        alert(`This account is registered as ${data.user.role}, not ${selectedRole}.`);
+                        return;
+                    }
                     
                     // Reset localStorage to prevent caching issues from other users
                     localStorage.clear();
                     localStorage.setItem("userId", data.user.id);
                     localStorage.setItem("userName", data.user.name);
+                    localStorage.setItem("userRole", data.user.role);
                     
                     // Redirect with cache buster to force fresh data load
-                    window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
+                    if (data.user.role.toLowerCase() === "doctor") {
+                        window.location.href = "Doctor Dashboard/doctor.html?t=" + Date.now();
+                    } else if (data.user.role.toLowerCase() === "admin") {
+                        window.location.href = "Admin Dashboard/admin.html?t=" + Date.now();
+                    } else {
+                        window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
+                    }
                 } catch (err) {
                     console.error(err);
                     const bypass = confirm("Could not connect to the live backend server (Render might be sleeping or spinning up).\n\nWould you like to use 'Direct Login' (Offline Mock Mode) to test the dashboard?");

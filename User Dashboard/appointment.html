@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book appointment</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="stylesheet" href="../assets/app-shell.css">
+    <script src="../assets/app-shell.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="index.css">
 </head>
@@ -101,57 +104,41 @@
                         <div class="input_group">
                             <div class="input_field">
                                 <i class="fa-solid fa-user"></i>
-                                <input type="text" name="" required placeholder="Enter Patient Name">
+                                <input type="text" id="patientName" required placeholder="Enter Patient Name">
                             </div>
     
                             <div class="input_field">
                                 <i class="fa-solid fa-calendar-days"></i>
-                                <input type="text" onfocus="this.type='date'" name="" required placeholder="Select Appointment Date">
+                                <input type="text" id="appointmentDate" onfocus="this.type='date'" required placeholder="Select Appointment Date">
                             </div>
     
                             <div class="input_field">
-                                <i class="fa-solid fa-clock"></i>
-                                <label for="selecttime"></label>
-                                <select id="selecttime" name="" required
-                                anchange="updatePlaceholder">
-                                    <option value="" disabled selected>Select Appointment Time</option>
-                                    <option value="time">10:00 AM</option>
-                                    <option value="time">11:00 AM</option>
-                                    <option value="time">12:00 PM</option>
-                                    <option value="time">02:00 PM</option>
-                                    <option value="time">03:00 PM</option>
-                                    <option value="time">04:00 PM</option>
-                                </select>
-                            </div>
-                            <div class="input_field">
                                 <i class="fa-solid fa-stethoscope"></i>
-                                <label for="selectdoctortype"></label>
-                                <select id="selectdoctortype" name="" required anchange="updatePlaceholder">
+                                <select id="selectdoctortype" required>
                                     <option value="" disabled selected>Select Doctor Type</option>
-                                    <option value="doctortype">Cardiologist</option>
-                                    <option value="doctortype">Dermatologist</option>
-                                    <option value="doctortype">Neurologist</option>
-                                    <option value="doctortype">Pediatrician</option>
-                                    <option value="doctortype">Orthopedist</option>
+                                    <option value="Cardiologist">Cardiologist</option>
+                                    <option value="Dermatologist">Dermatologist</option>
+                                    <option value="Neurologist">Neurologist</option>
+                                    <option value="Pediatrician">Pediatrician</option>
+                                    <option value="Orthopedist">Orthopedist</option>
                                 </select>
                             </div>
     
                             <div class="input_field">
                                 <i class="fa-solid fa-user-doctor"></i>
-                                <label for="selectdoctor"></label>
-                                <select id="selectdoctor" name="" required anchange="updatePlaceholder">
+                                <select id="selectdoctor" required>
                                     <option value="" disabled selected>Select Doctor</option>
-                                    <option value="doctor">Dr. Rampravesh Rana</option>
-                                    <option value="doctor">Dr. Ashish Rana</option>
-                                    <option value="doctor">Dr. Aryan Rana</option>
-                                    <option value="doctor">Dr. Neeraj Pandit</option>
-                                    <option value="doctor">Dr. Shubham Singh</option>
-                                    <option value="doctor">Dr. Suraj Rana</option>
-                                    <option value="doctor">Dr. Pankaj Yadav</option>
-                                    <option value="doctor">Dr. Himanshu Rana</option>
-                                    <option value="doctor">Dr. Baleshwar Rana</option>
-                                    <option value="doctor">Dr. Sunil Rana</option>
-                                    <option value="doctor">Dr. Anushka Rana</option>
+                                    <option value="Dr. Rampravesh Rana">Dr. Rampravesh Rana</option>
+                                    <option value="Dr. Ashish Rana">Dr. Ashish Rana</option>
+                                    <option value="Dr. Aryan Rana">Dr. Aryan Rana</option>
+                                    <option value="Dr. Neeraj Pandit">Dr. Neeraj Pandit</option>
+                                    <option value="Dr. Shubham Singh">Dr. Shubham Singh</option>
+                                    <option value="Dr. Suraj Rana">Dr. Suraj Rana</option>
+                                    <option value="Dr. Pankaj Yadav">Dr. Pankaj Yadav</option>
+                                    <option value="Dr. Himanshu Rana">Dr. Himanshu Rana</option>
+                                    <option value="Dr. Baleshwar Rana">Dr. Baleshwar Rana</option>
+                                    <option value="Dr. Sunil Rana">Dr. Sunil Rana</option>
+                                    <option value="Dr. Anushka Rana">Dr. Anushka Rana</option>
                                 </select>
                             </div>
                         
@@ -184,28 +171,40 @@
             form.addEventListener("submit", async (e) => {
                 e.preventDefault();
 
-                const patientName = document.querySelector('input[placeholder="Enter Patient Name"]').value;
-                const appointmentDateInput = document.querySelector('input[placeholder="Select Appointment Date"]');
-                const appointmentDate = appointmentDateInput.value;
+                // Get values by ID for reliability
+                const patientName = document.getElementById("patientName").value.trim();
+                const appointmentDate = document.getElementById("appointmentDate").value;
                 
-                const selectTime = document.getElementById("selecttime");
-                const appointmentTime = selectTime.options[selectTime.selectedIndex].text;
+                const doctorType = document.getElementById("selectdoctortype").value;
                 
-                const selectDoctorType = document.getElementById("selectdoctortype");
-                const doctorType = selectDoctorType.options[selectDoctorType.selectedIndex].text;
-                
-                const selectDoctor = document.getElementById("selectdoctor");
-                const doctorName = selectDoctor.options[selectDoctor.selectedIndex].text;
+                const doctorName = document.getElementById("selectdoctor").value;
 
-                if (userId === "mock_user") {
-                    alert("Appointment Booked Successfully! (Offline Mock Mode)");
+                // Retrieve fresh userId right before submission
+                const currentUserId = localStorage.getItem("userId");
+
+                // Frontend validation check
+                if (!currentUserId || !patientName || !appointmentDate || !doctorType || !doctorName) {
+                    const missing = [];
+                    if (!currentUserId) missing.push("User Session (Log in again)");
+                    if (!patientName) missing.push("Patient Name");
+                    if (!appointmentDate) missing.push("Appointment Date");
+                    if (!doctorType) missing.push("Doctor Type");
+                    if (!doctorName) missing.push("Doctor Name");
                     
+                    alert("Error: Missing fields - " + missing.join(", "));
+                    console.error("Missing fields:", { currentUserId, patientName, appointmentDate, doctorType, doctorName });
+                    return;
+                }
+
+                if (currentUserId === "mock_user") {
                     const mockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
                     mockApps.unshift({
+                        id: "mock_" + Date.now(),
+                        patient_name: patientName,
                         doctor_name: doctorName,
                         doctor_type: doctorType,
                         appointment_date: appointmentDate,
-                        appointment_time: appointmentTime,
+                        booking_slot: null,
                         status: "Pending"
                     });
                     localStorage.setItem("mock_appointments", JSON.stringify(mockApps));
@@ -213,11 +212,12 @@
                     // Log an offline notification too!
                     const mockNotifs = JSON.parse(localStorage.getItem("mock_notifications") || "[]");
                     mockNotifs.unshift({
-                        message: `Appointment for ${patientName} with ${doctorName} booked successfully on ${appointmentDate} at ${appointmentTime}. Status: Pending.`,
+                        message: `Appointment for ${patientName} with ${doctorName} was requested on ${appointmentDate}. Serial number will be assigned after doctor approval. Status: Pending.`,
                         created_at: new Date().toISOString()
                     });
                     localStorage.setItem("mock_notifications", JSON.stringify(mockNotifs));
 
+                    alert("Appointment Booked Successfully! (Offline Mock Mode)");
                     window.location.href = "dashboard.html";
                     return;
                 }
@@ -227,10 +227,9 @@
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            userId,
+                            userId: currentUserId,
                             patientName,
                             appointmentDate,
-                            appointmentTime,
                             doctorType,
                             doctorName
                         })

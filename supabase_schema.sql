@@ -30,12 +30,63 @@ CREATE TABLE IF NOT EXISTS appointments (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     patient_name VARCHAR(255) NOT NULL,
     appointment_date DATE NOT NULL,
-    appointment_time VARCHAR(50) NOT NULL,
+    booking_slot VARCHAR(50), -- Doctor-assigned serial number, e.g. '01', set when accepted
     doctor_type VARCHAR(100) NOT NULL,
     doctor_name VARCHAR(255) NOT NULL,
-    status VARCHAR(50) DEFAULT 'Pending', -- 'Accepted', 'Rejected', 'Pending'
+    status VARCHAR(50) DEFAULT 'Pending', -- 'Accepted', 'Rejected', 'Pending', 'Cancelled'
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Rename the original slot column when upgrading an already-created database
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'appointments'
+          AND column_name = 'appointment_time'
+    ) AND NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'appointments'
+          AND column_name = 'booking_slot'
+    ) THEN
+        ALTER TABLE appointments RENAME COLUMN appointment_time TO booking_slot;
+    ELSIF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'appointments'
+          AND column_name = 'appointment_time'
+    ) AND EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'appointments'
+          AND column_name = 'booking_slot'
+    ) THEN
+        UPDATE appointments
+        SET booking_slot = appointment_time
+        WHERE booking_slot IS NULL;
+        ALTER TABLE appointments ALTER COLUMN appointment_time DROP NOT NULL;
+    END IF;
+END $$;
+
+-- Pending appointments wait for the doctor to assign a serial number on acceptance.
+ALTER TABLE appointments ALTER COLUMN booking_slot DROP NOT NULL;
+UPDATE appointments
+SET booking_slot = NULL
+WHERE LOWER(status) IN ('pending', 'rejected', 'cancelled');
+
+-- Old accepted appointments may contain time values; they require a new doctor serial.
+UPDATE appointments
+SET booking_slot = NULL,
+    status = 'Pending'
+WHERE LOWER(status) = 'accepted'
+  AND booking_slot IS NOT NULL
+  AND booking_slot !~ '^[0-9]{1,3}$';
 
 -- Create the notifications table
 CREATE TABLE IF NOT EXISTS notifications (
@@ -65,4 +116,8 @@ ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
 -- Create indexes for faster lookups
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_appointments_user_id ON appointments(user_id);
+CREATE INDEX IF NOT EXISTS idx_appointments_doctor_name ON appointments(doctor_name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_appointments_doctor_date_serial
+ON appointments(doctor_name, appointment_date, booking_slot)
+WHERE LOWER(status) = 'accepted' AND booking_slot IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);

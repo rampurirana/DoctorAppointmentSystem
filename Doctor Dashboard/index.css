@@ -443,6 +443,39 @@ body {
   font-size: 14px;
   font-weight: 500;
 }
+.status.cancel {
+  padding: 2px 4px;
+  background: #6c757d;
+  color: var(--white);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.serial-input {
+  width: 64px;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+}
+.appointment-action {
+  padding: 6px 10px;
+  margin: 2px;
+  border: none;
+  border-radius: 4px;
+  color: var(--white);
+  cursor: pointer;
+}
+.appointment-action.accept {
+  background: #0f8e03;
+}
+.appointment-action.reject {
+  background: #f00;
+}
+.appointment-action:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
 
 /* ============== Notification Design ============== */
 .notification {

@@ -21,6 +21,61 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+/**
+ * Fetch and display Dashboard Stats
+ */
+async function loadDashboardStats() {
+    const userId = localStorage.getItem("userId");
+    if (!userId || userId === "mock_user") return;
+
+    try {
+        const response = await fetch(`http://localhost:10000/api/user/${userId}/stats`);
+        if (!response.ok) throw new Error("Failed to fetch stats");
+
+        const stats = await response.json();
+
+        // Mapping stats to UI elements (assuming these IDs exist in dashboard.html)
+        const successEl = document.getElementById("success-count");
+        const pendingEl = document.getElementById("pending-count");
+        const rejectEl = document.getElementById("reject-count");
+
+        if (successEl) successEl.textContent = stats.success;
+        if (pendingEl) pendingEl.textContent = stats.pending;
+        if (rejectEl) rejectEl.textContent = stats.reject;
+    } catch (err) {
+        console.error("Error loading stats:", err);
+    }
+}
+
+/**
+ * Fetch and display Recent Appointments
+ */
+async function loadRecentAppointments() {
+    const userId = localStorage.getItem("userId");
+    if (!userId || userId === "mock_user") return;
+
+    try {
+        const response = await fetch(`http://localhost:10000/api/user/${userId}/appointments`);
+        if (!response.ok) throw new Error("Failed to fetch appointments");
+
+        const appointments = await response.json();
+        const tableBody = document.querySelector(".recentOrders table tbody");
+
+        if (tableBody) {
+            tableBody.innerHTML = appointments.slice(0, 5).map(app => `
+                <tr>
+                    <td>${app.patient_name}</td>
+                    <td>${app.doctor_name}</td>
+                    <td>${app.booking_slot || "Pending assignment"}</td>
+                    <td><span class="status ${app.status.toLowerCase()}">${app.status}</span></td>
+                </tr>
+            `).join('');
+        }
+    } catch (err) {
+        console.error("Error loading appointments:", err);
+    }
+}
+
 function highlightActiveTab() {
     let matched = false;
     navLinks.forEach((link) => {
@@ -38,12 +93,15 @@ function highlightActiveTab() {
         const dashboardLi = document.querySelector(".navigation li a[href='dashboard.html']");
         if (dashboardLi) {
             dashboardLi.parentElement.classList.add("hovered");
+            // Auto-load data if on dashboard
+            loadDashboardStats();
+            loadRecentAppointments();
         }
     }
 }
 
 // Initialize on page load
-highlightActiveTab();
+document.addEventListener("DOMContentLoaded", highlightActiveTab);
 
 // Handle Hover animations
 let list = document.querySelectorAll(".navigation li");
