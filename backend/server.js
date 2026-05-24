@@ -35,7 +35,7 @@ app.post('/api/signup', async (req, res) => {
                     role 
                 }
             ])
-            .select();
+            .select('id, name, email, role');
 
         if (error) throw error;
         
@@ -85,7 +85,8 @@ app.post('/api/login', async (req, res) => {
             .update({ last_login_date: new Date().toISOString() })
             .eq('id', user.id);
 
-        res.status(200).json({ message: 'Login successful', user });
+        const { password_hash, ...safeUser } = user;
+        res.status(200).json({ message: 'Login successful', user: safeUser });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -98,7 +99,7 @@ app.get('/api/user/:id', async (req, res) => {
     try {
         const { data: user, error } = await supabase
             .from('users')
-            .select('id, name, email, role, mobile, gender, aadhaar, blood_group, country, state, district, pincode')
+            .select('id, name, email, role, mobile, gender, aadhaar, blood_group, country, state, district, pincode, name_updated, email_updated')
             .eq('id', id)
             .single();
 
@@ -115,22 +116,47 @@ app.put('/api/user/:id', async (req, res) => {
     const { name, mobile, email, gender, aadhaar, blood_group, country, state, district, pincode } = req.body;
 
     try {
+        const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('name, email, name_updated, email_updated')
+            .eq('id', id)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        const trimmedName = String(name || '').trim();
+        const trimmedEmail = String(email || '').trim();
+        if (!trimmedName || !trimmedEmail) {
+            return res.status(400).json({ error: 'Name and email are required' });
+        }
+
+        const nameChanged = trimmedName !== existingUser.name;
+        const emailChanged = trimmedEmail !== existingUser.email;
+        if (existingUser.name_updated && nameChanged) {
+            return res.status(409).json({ error: 'Name can only be updated once' });
+        }
+        if (existingUser.email_updated && emailChanged) {
+            return res.status(409).json({ error: 'Email can only be updated once' });
+        }
+
         const { data, error } = await supabase
             .from('users')
             .update({
-                name,
+                name: trimmedName,
                 mobile,
-                email,
+                email: trimmedEmail,
                 gender,
                 aadhaar,
                 blood_group,
                 country,
                 state,
                 district,
-                pincode
+                pincode,
+                name_updated: existingUser.name_updated || nameChanged,
+                email_updated: existingUser.email_updated || emailChanged
             })
             .eq('id', id)
-            .select();
+            .select('id, name, email, role, mobile, gender, aadhaar, blood_group, country, state, district, pincode, name_updated, email_updated');
 
         if (error) throw error;
         res.status(200).json({ message: 'Profile updated successfully', user: data[0] });
