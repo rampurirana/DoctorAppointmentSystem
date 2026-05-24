@@ -35,6 +35,44 @@
         .form_row .lock-hint ion-icon {
             font-size: 13px;
         }
+
+        /* Topbar Responsiveness Fix */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 15px;
+        }
+
+        #welcomeTextCard {
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px !important;
+        }
+
+        @media (max-width: 768px) {
+            #welcomeTextCard {
+                font-size: 0.9rem !important;
+                max-width: 120px; /* Further limit name width on tablets */
+            }
+            .search {
+                flex: 1; /* Allow search to take remaining space */
+                max-width: 180px;
+                margin: 0 5px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #welcomeTextCard {
+                display: none; /* Hide name on small mobiles to prioritize search and toggle */
+            }
+            .search {
+                margin: 0 5px !important;
+            }
+        }
     </style>
 </head>
 
@@ -260,6 +298,8 @@
         // To track if Name or Email are actually changed during submission
         let originalName = "";
         let originalEmail = "";
+        let isNameLocked = false;
+        let isEmailLocked = false;
 
         // State-District Data Mapping
         const stateDistricts = {
@@ -314,11 +354,11 @@
         }
 
         // Setup name and email hints (always) and lock them (if already updated)
-        function setupNameEmailFields() {
+        function setupNameEmailFields(user) {
             const nameInput = document.getElementById("name");
             const emailInput = document.getElementById("email");
-            const isNameLocked = localStorage.getItem(`name_updated_${userId}`) === "true";
-            const isEmailLocked = localStorage.getItem(`email_updated_${userId}`) === "true";
+            isNameLocked = Boolean(user.name_updated);
+            isEmailLocked = Boolean(user.email_updated);
 
             if (nameInput && !nameInput.parentElement.querySelector(".lock-hint")) {
                 if (isNameLocked) nameInput.setAttribute("readonly", true);
@@ -391,7 +431,7 @@
             document.getElementById("pincode").value = user.pincode || "NA";
 
             // Always setup fields to show hints, lock them only if already updated
-            setupNameEmailFields();
+            setupNameEmailFields(user);
         }
 
         // Clear 'NA' when user clicks on a field to edit
@@ -499,10 +539,12 @@
 
                 if (userId === "mock_user") {
                     alert("Profile Updated Successfully! (Offline Mock Mode)");
-                    localStorage.setItem("mock_profile", JSON.stringify(profileData));
+                    localStorage.setItem("mock_profile", JSON.stringify({
+                        ...profileData,
+                        name_updated: isNameLocked || name !== originalName,
+                        email_updated: isEmailLocked || email !== originalEmail
+                    }));
                     localStorage.setItem("userName", name);
-                    if (name !== originalName) localStorage.setItem(`name_updated_${userId}`, "true");
-                    if (email !== originalEmail) localStorage.setItem(`email_updated_${userId}`, "true");
                     location.reload();
                     return;
                 }
@@ -517,9 +559,7 @@
                     const data = await response.json();
                     if (response.ok) {
                         alert("Profile Updated Successfully!");
-                        localStorage.setItem("userName", name);
-                        if (name !== originalName) localStorage.setItem(`name_updated_${userId}`, "true");
-                        if (email !== originalEmail) localStorage.setItem(`email_updated_${userId}`, "true");
+                        localStorage.setItem("userName", data.user.name);
                         location.reload();
                     } else {
                         alert("Error: " + data.error);

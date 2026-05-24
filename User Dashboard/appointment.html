@@ -9,6 +9,53 @@
     <script src="../assets/app-shell.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link rel="stylesheet" href="index.css">
+    <style>
+        /* Topbar Responsiveness Fix */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 15px;
+        }
+
+        #welcomeTextCard {
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px !important;
+        }
+
+        @media (max-width: 768px) {
+            #welcomeTextCard {
+                font-size: 0.9rem !important;
+                max-width: 120px; /* Further limit name width on tablets */
+            }
+            .search {
+                flex: 1; /* Allow search to take remaining space */
+                max-width: 180px;
+                margin: 0 5px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #welcomeTextCard {
+                display: none; /* Hide name on small mobiles to prioritize search and toggle */
+            }
+            .search {
+                margin: 0 5px !important;
+            }
+        }
+
+        /* Calendar Picker Color Match */
+        #appointmentDate::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(48%) sepia(13%) saturate(3207%) hue-rotate(130deg) brightness(95%) contrast(80%);
+            padding: 5px;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 
 <body>
@@ -164,6 +211,13 @@
         }
 
         const backendUrl = "http://localhost:10000";
+
+        // Restrict date picker to present and future dates
+        document.addEventListener("DOMContentLoaded", () => {
+            const dateInput = document.getElementById("appointmentDate");
+            const today = new Date().toISOString().split("T")[0];
+            dateInput.setAttribute("min", today);
+        });
 
         // Bind form submission
         const form = document.getElementById("appointmentForm");

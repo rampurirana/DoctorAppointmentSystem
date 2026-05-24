@@ -9,6 +9,47 @@ window.addEventListener("pageshow", function (event) {
 const currentPage = window.location.pathname.split("/").pop();
 const navLinks = document.querySelectorAll(".navigation li a");
 
+/**
+ * Fetch and display Welcome Name in topbar across all dashboard pages
+ */
+async function loadWelcomeName() {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    const searchBar = document.querySelector(".search");
+    if (!searchBar) return;
+
+    // Check if welcome text already exists to prevent duplication
+    if (document.getElementById("welcomeTextCard")) return;
+
+    let name = localStorage.getItem("userName") || "Valued Patient";
+
+    // Only fetch if not in mock mode
+    if (userId !== "mock_user") {
+        try {
+            const response = await fetch(`http://localhost:10000/api/user/${userId}`);
+            if (response.ok) {
+                const user = await response.json();
+                name = user.name;
+                localStorage.setItem("userName", name); // Update local cache
+            }
+        } catch (err) {
+            console.error("Failed to fetch user name for welcome:", err);
+        }
+    }
+
+    const welcomeText = document.createElement("h3");
+    welcomeText.id = "welcomeTextCard";
+    welcomeText.style.color = "var(--primary-color-dark)";
+    welcomeText.style.marginRight = "20px";
+    welcomeText.style.fontSize = "1.1rem";
+    welcomeText.style.fontWeight = "600";
+    welcomeText.innerText = `Welcome, ${name}!`;
+    
+    // Insert before search bar
+    searchBar.parentElement.insertBefore(welcomeText, searchBar);
+}
+
 // Dynamic Logout Listener
 document.addEventListener("DOMContentLoaded", () => {
     const logoutLink = document.querySelector(".navigation li a[href*='index.html']");
@@ -101,7 +142,10 @@ function highlightActiveTab() {
 }
 
 // Initialize on page load
-document.addEventListener("DOMContentLoaded", highlightActiveTab);
+document.addEventListener("DOMContentLoaded", () => {
+    highlightActiveTab();
+    loadWelcomeName();
+});
 
 // Handle Hover animations
 let list = document.querySelectorAll(".navigation li");

@@ -445,7 +445,6 @@
         // Block index.js from overwriting dashboard data with its simplified logic
         window.loadDashboardStats = () => console.log("Blocked index.js stats load");
         window.loadRecentAppointments = () => console.log("Blocked index.js appointments load");
-
         // Session security check
         const userId = localStorage.getItem("userId");
         if (!userId) {
@@ -454,42 +453,6 @@
 
         const isMockMode = userId === "mock_user";
         const backendUrl = "http://localhost:10000";
-
-        // Fetch User profile to welcome them
-        async function fetchWelcome() {
-            if (isMockMode) {
-                renderWelcome("Demo Patient");
-                return;
-            }
-            try {
-                const res = await fetch(`${backendUrl}/api/user/${userId}`);
-                if (res.ok) {
-                    const user = await res.json();
-                    renderWelcome(user.name);
-                }
-            } catch (err) {
-                console.error(err);
-                renderWelcome(localStorage.getItem("userName") || "Valued Patient");
-            }
-        }
-
-        function renderWelcome(name) {
-            const searchBar = document.querySelector('.search');
-            if (searchBar) {
-                // Prevent duplicate welcome text on hot reload
-                const existing = document.getElementById("welcomeTextCard");
-                if (existing) existing.remove();
-
-                const welcomeText = document.createElement('h3');
-                welcomeText.id = "welcomeTextCard";
-                welcomeText.style.color = 'var(--primary-color-dark)';
-                welcomeText.style.marginRight = '20px';
-                welcomeText.style.fontSize = '1.1rem';
-                welcomeText.style.fontWeight = '600';
-                welcomeText.innerText = `Welcome, ${name}!`;
-                searchBar.parentElement.insertBefore(welcomeText, searchBar);
-            }
-        }
 
         // Fetch dashboard statistics
         function updateStats() {
@@ -649,34 +612,11 @@
                 });
             }
 
-            // Sort appointments:
-            // 1. Prioritize Pending appointments at the top, and Successful/Rejected at the bottom.
-            // 2. Within those status groups, sort chronologically by nearest date and time.
+            // Sort appointments: Newest (latest scheduled date/time) at the top, older at the bottom.
             filtered.sort((a, b) => {
-                const getPriority = (status) => {
-                    const s = (status || "").toLowerCase();
-                    if (s === 'pending') return 0; // Top priority
-                    return 1; // Lower priority (Successful/Rejected/Cancelled)
-                };
-
-                const priorityA = getPriority(a.status);
-                const priorityB = getPriority(b.status);
-
-                if (priorityA !== priorityB) {
-                    return priorityA - priorityB; // Show Pending first
-                }
-
-                // If priorities are the same, sort by date ascending (nearest first)
-                const dateA = parseDateTime(a.appointment_date, "");
-                const dateB = parseDateTime(b.appointment_date, "");
-                if (dateA !== dateB) {
-                    return dateA - dateB;
-                }
-                
-                // If dates are the same, sort by time ascending (earlier time slot first)
                 const timeA = parseDateTime(a.appointment_date, a.booking_slot || a.appointment_time);
                 const timeB = parseDateTime(b.appointment_date, b.booking_slot || b.appointment_time);
-                return timeA - timeB;
+                return timeB - timeA;
             });
 
             // Limit to 10 if not showing all
@@ -892,7 +832,6 @@
         });
 
         // Run fetchers
-        fetchWelcome();
         fetchAppointments();
     </script>
 
