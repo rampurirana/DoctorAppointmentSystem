@@ -207,7 +207,7 @@ if (navigation && !document.getElementById("nav-close-btn")) {
     });
 }
 
-let activeTab = 'upcoming';
+let activeTab = 'all';
 
 function setupTabs() {
     const tabs = document.querySelectorAll(".tab-btn");

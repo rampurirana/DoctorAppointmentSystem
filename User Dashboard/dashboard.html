@@ -151,9 +151,64 @@
             color: var(--text-dark) !important;
         }
 
+        /* Tab Navigation Styles */
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            width: 100%;
+            padding-top: 10px;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+            margin-top: 10px;
+        }
+        .tab-navigation::-webkit-scrollbar {
+            display: none;
+        }
+        .tab-btn {
+            position: relative;
+            padding: 8px 16px;
+            border: 1px solid var(--primary-color-light);
+            background: var(--white);
+            color: var(--primary-color);
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .cardHeader {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px;
+            align-items: flex-start !important;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+        }
+
         .status.cancel {
             padding: 2px 4px;
             background: #6c757d; /* Muted grey for cancelled */
+            color: var(--white);
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status.completed {
+            padding: 2px 4px;
+            background: #0d846c;
             color: var(--white);
             border-radius: 4px;
             font-size: 14px;
@@ -399,8 +454,18 @@
             <div class="details">
                 <div class="recentOrders">
                     <div class="cardHeader">
-                        <h2>Recent Appointments</h2>
-                        <a href="#" class="btn" id="viewAllBtn">View All</a>
+                        <div class="header-top">
+                            <h2>Recent Appointments</h2>
+                            <a href="#" class="btn" id="viewAllBtn">View All</a>
+                        </div>
+                        <div class="tab-navigation">
+                            <button class="tab-btn active" data-filter="all">All</button>
+                            <button class="tab-btn" data-filter="pending">Pending</button>
+                            <button class="tab-btn" data-filter="successful">Successful</button>
+                            <button class="tab-btn" data-filter="rejected">Rejected</button>
+                            <button class="tab-btn" data-filter="cancel">Cancel</button>
+                            <button class="tab-btn" data-filter="unsuccessful">Unsuccessful</button>
+                        </div>
                     </div>
 
                     <table>
@@ -461,20 +526,22 @@
             let success = 0;
             let pending = 0;
             let reject = 0;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
             allAppointmentsData.forEach(app => {
-                const status = (app.status || "pending").toLowerCase();
-                if (status === 'accepted' || status === 'accept') success++;
-                else if (status === 'pending') pending++;
-                else if (status === 'rejected' || status === 'reject' || status === 'cancelled' || status === 'cancel') reject++;
-            });
+                const status = (app.status || "pending").toLowerCase().trim();
+                const appDate = new Date(app.appointment_date);
+                appDate.setHours(0, 0, 0, 0);
 
-            // Add baseline mock data if in mock mode to maintain UI design
-            if (isMockMode) {
-                success += 12;
-                pending += 3;
-                reject += 1;
-            }
+                if (status === 'completed') {
+                    success++;
+                } else if (status === 'pending' || ((status === 'accepted' || status === 'accept') && appDate >= today)) {
+                    pending++;
+                } else {
+                    reject++;
+                }
+            });
 
             renderStats({ success, pending, reject });
         }
@@ -587,13 +654,26 @@
             // Apply filter
             if (currentFilter !== 'all') {
                 filtered = allAppointmentsData.filter(app => {
-                    const status = (app.status || "pending").toLowerCase();
-                    if (currentFilter === 'accepted') {
-                        return status === 'accepted' || status === 'accept';
+                    const status = (app.status || "pending").toLowerCase().trim();
+                    if (currentFilter === 'successful') {
+                        return status === 'completed';
                     } else if (currentFilter === 'pending') {
-                        return status === 'pending';
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const appDate = new Date(app.appointment_date);
+                        appDate.setHours(0, 0, 0, 0);
+                        return status === 'pending' || ((status === 'accepted' || status === 'accept') && appDate >= today);
                     } else if (currentFilter === 'rejected') {
-                        return status === 'rejected' || status === 'reject' || status === 'cancelled' || status === 'cancel';
+                        return status === 'rejected' || status === 'reject';
+                    } else if (currentFilter === 'cancel') {
+                        return status === 'cancelled' || status === 'cancel';
+                    } else if (currentFilter === 'unsuccessful') {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const appDate = new Date(app.appointment_date);
+                        appDate.setHours(0, 0, 0, 0);
+                        // Includes Rejected, Cancelled, Not Completed, or Past Accepted
+                        return status === 'rejected' || status === 'reject' || status === 'cancelled' || status === 'cancel' || status === 'not completed' || ((status === 'accepted' || status === 'accept') && appDate < today);
                     }
                     return false;
                 });
@@ -654,10 +734,11 @@
                     const statusLower = (app.status || "").toLowerCase();
                     if (statusLower === 'accepted' || statusLower === 'accept') statusClass = "accept";
                     else if (statusLower === 'rejected' || statusLower === 'reject') statusClass = "reject";
+                    else if (statusLower === 'completed') statusClass = "completed";
                     else if (statusLower === 'cancelled' || statusLower === 'cancel') statusClass = "cancel";
 
-                    // Pending or accepted bookings can be cancelled; completed states stay visible.
-                    const isCancellable = statusLower === 'pending' || statusLower === 'accepted' || statusLower === 'accept';
+                    // Only pending bookings can be cancelled by the user.
+                    const isCancellable = statusLower === 'pending';
 
                     tr.innerHTML = `
                         <td>${app.patient_name || 'N/A'}</td>
@@ -785,13 +866,18 @@
             if (cardPending) cardPending.classList.remove("active-filter");
             if (cardReject) cardReject.classList.remove("active-filter");
 
-            if (newFilter === "accepted" && cardSuccess) {
+            if (newFilter === "successful" && cardSuccess) {
                 cardSuccess.classList.add("active-filter");
             } else if (newFilter === "pending" && cardPending) {
                 cardPending.classList.add("active-filter");
-            } else if (newFilter === "rejected" && cardReject) {
+            } else if (newFilter === "unsuccessful" && cardReject) {
                 cardReject.classList.add("active-filter");
             }
+
+            // Sync tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === newFilter);
+            });
 
             filterAndRender();
         }
@@ -805,7 +891,7 @@
 
             if (cardSuccess) {
                 cardSuccess.addEventListener("click", () => {
-                    handleFilterChange(currentFilter === "accepted" ? "all" : "accepted");
+                    handleFilterChange(currentFilter === "successful" ? "all" : "successful");
                 });
             }
             if (cardPending) {
@@ -815,9 +901,16 @@
             }
             if (cardReject) {
                 cardReject.addEventListener("click", () => {
-                    handleFilterChange(currentFilter === "rejected" ? "all" : "rejected");
+                    handleFilterChange(currentFilter === "unsuccessful" ? "all" : "unsuccessful");
                 });
             }
+
+            // Tab button clicks
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    handleFilterChange(btn.dataset.filter);
+                });
+            });
 
             // View All / Show Less button click
             const viewAllBtn = document.getElementById("viewAllBtn");

@@ -560,6 +560,22 @@ app.patch('/api/user/:id/notifications/read', async (req, res) => {
     }
 });
 
+app.delete('/api/user/:id/notifications', async (req, res) => {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ error: "User ID is required" });
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .delete()
+            .eq('user_id', id);
+
+        if (error) throw error;
+        res.status(200).json({ message: 'All notifications cleared successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- 11. FETCH STATS ROUTE (Count success, pending, rejected/cancelled appointments) ---
 app.get('/api/user/:id/stats', async (req, res) => {
     const { id } = req.params;
