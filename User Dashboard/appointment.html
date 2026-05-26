@@ -55,6 +55,61 @@
             padding: 5px;
             border-radius: 3px;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            animation: modalSlideDown 0.4s ease-out;
+        }
+        @keyframes modalSlideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-content h3 {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+        }
+        .modal-content p {
+            margin-bottom: 30px;
+            color: #666;
+            line-height: 1.5;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .btn-confirm, .btn-close {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-confirm { background: var(--primary-color); color: white; }
+        .btn-close { background: #f0f0f0; color: #555; }
     </style>
 </head>
 
@@ -163,11 +218,6 @@
                                 <i class="fa-solid fa-stethoscope"></i>
                                 <select id="selectdoctortype" required>
                                     <option value="" disabled selected>Select Doctor Type</option>
-                                    <option value="Cardiologist">Cardiologist</option>
-                                    <option value="Dermatologist">Dermatologist</option>
-                                    <option value="Neurologist">Neurologist</option>
-                                    <option value="Pediatrician">Pediatrician</option>
-                                    <option value="Orthopedist">Orthopedist</option>
                                 </select>
                             </div>
     
@@ -175,17 +225,6 @@
                                 <i class="fa-solid fa-user-doctor"></i>
                                 <select id="selectdoctor" required>
                                     <option value="" disabled selected>Select Doctor</option>
-                                    <option value="Dr. Rampravesh Rana">Dr. Rampravesh Rana</option>
-                                    <option value="Dr. Ashish Rana">Dr. Ashish Rana</option>
-                                    <option value="Dr. Aryan Rana">Dr. Aryan Rana</option>
-                                    <option value="Dr. Neeraj Pandit">Dr. Neeraj Pandit</option>
-                                    <option value="Dr. Shubham Singh">Dr. Shubham Singh</option>
-                                    <option value="Dr. Suraj Rana">Dr. Suraj Rana</option>
-                                    <option value="Dr. Pankaj Yadav">Dr. Pankaj Yadav</option>
-                                    <option value="Dr. Himanshu Rana">Dr. Himanshu Rana</option>
-                                    <option value="Dr. Baleshwar Rana">Dr. Baleshwar Rana</option>
-                                    <option value="Dr. Sunil Rana">Dr. Sunil Rana</option>
-                                    <option value="Dr. Anushka Rana">Dr. Anushka Rana</option>
                                 </select>
                             </div>
                         
@@ -200,6 +239,17 @@
         </div>
     </div>
 
+    <!-- Action Confirmation Modal -->
+    <div id="bookingActionModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Status</h3>
+            <p id="modalMessage"></p>
+            <div class="modal-footer">
+                <button id="modalCloseBtn" class="btn-close">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- =========== Scripts =========  -->
     <script src="index.js"></script>
 
@@ -210,13 +260,82 @@
             window.location.replace("../index.html");
         }
 
+        function showBookingModal(title, message, redirect = false) {
+            const modal = document.getElementById("bookingActionModal");
+            document.getElementById("modalTitle").innerText = title;
+            document.getElementById("modalMessage").innerText = message;
+            modal.style.display = "flex";
+            document.getElementById("modalCloseBtn").onclick = () => {
+                modal.style.display = "none";
+                if (redirect) window.location.href = "dashboard.html";
+            };
+        }
+
         const backendUrl = "http://localhost:10000";
+        let availableDoctors = [];
+
+        function populateDoctorOptions() {
+            const specialty = document.getElementById("selectdoctortype").value;
+            const doctorSelect = document.getElementById("selectdoctor");
+            const doctors = availableDoctors.filter((doctor) => doctor.specialty === specialty);
+
+            doctorSelect.innerHTML = `<option value="" disabled selected>Select Doctor</option>`;
+            doctors.forEach((doctor) => {
+                const option = document.createElement("option");
+                option.value = doctor.id;
+                
+                if (doctor.is_available === false) {
+                    option.textContent = `${doctor.name} (Currently Unavailable)`;
+                    option.disabled = true;
+                } else {
+                    option.textContent = doctor.name;
+                }
+                doctorSelect.appendChild(option);
+            });
+        }
+
+        async function loadAvailableDoctors() {
+            const specialtySelect = document.getElementById("selectdoctortype");
+            try {
+                let data;
+                if (userId === "mock_user") {
+                    data = [
+                        { id: "mock_doctor_1", name: "Dr. Rampravesh Rana", specialty: "Cardiologist" },
+                        { id: "mock_doctor_2", name: "Dr. Aryan Rana", specialty: "Dermatologist" },
+                        { id: "mock_doctor_3", name: "Dr. Pankaj Yadav", specialty: "Orthopedist" }
+                    ];
+                } else {
+                    const response = await fetch(`${backendUrl}/api/doctors`);
+                    data = await response.json();
+                    if (!response.ok) throw new Error(data.error || "Could not load doctors");
+                }
+                availableDoctors = data;
+
+                const specialties = [...new Set(data.map((doctor) => doctor.specialty))];
+                specialtySelect.innerHTML = `<option value="" disabled selected>Select Doctor Type</option>`;
+                specialties.forEach((specialty) => {
+                    const option = document.createElement("option");
+                    option.value = specialty;
+                    option.textContent = specialty;
+                    specialtySelect.appendChild(option);
+                });
+
+                if (specialties.length === 0) {
+                    specialtySelect.innerHTML = `<option value="" disabled selected>No doctors available</option>`;
+                }
+            } catch (err) {
+                console.error("Failed to fetch doctors:", err);
+                specialtySelect.innerHTML = `<option value="" disabled selected>Doctors unavailable</option>`;
+            }
+        }
 
         // Restrict date picker to present and future dates
         document.addEventListener("DOMContentLoaded", () => {
             const dateInput = document.getElementById("appointmentDate");
             const today = new Date().toISOString().split("T")[0];
             dateInput.setAttribute("min", today);
+            document.getElementById("selectdoctortype").addEventListener("change", populateDoctorOptions);
+            loadAvailableDoctors();
         });
 
         // Bind form submission
@@ -230,31 +349,38 @@
                 const appointmentDate = document.getElementById("appointmentDate").value;
                 
                 const doctorType = document.getElementById("selectdoctortype").value;
-                
-                const doctorName = document.getElementById("selectdoctor").value;
+                const doctorId = document.getElementById("selectdoctor").value;
+                const selectedDoctor = availableDoctors.find((doctor) => doctor.id === doctorId);
+                const doctorName = selectedDoctor?.name || "";
 
                 // Retrieve fresh userId right before submission
                 const currentUserId = localStorage.getItem("userId");
 
                 // Frontend validation check
-                if (!currentUserId || !patientName || !appointmentDate || !doctorType || !doctorName) {
+                if (!currentUserId || !patientName || !appointmentDate || !doctorType || !doctorId || !doctorName) {
                     const missing = [];
                     if (!currentUserId) missing.push("User Session (Log in again)");
                     if (!patientName) missing.push("Patient Name");
                     if (!appointmentDate) missing.push("Appointment Date");
                     if (!doctorType) missing.push("Doctor Type");
-                    if (!doctorName) missing.push("Doctor Name");
+                    if (!doctorId || !doctorName) missing.push("Doctor Name");
                     
-                    alert("Error: Missing fields - " + missing.join(", "));
+                    showBookingModal("Input Error", "Missing fields: " + missing.join(", "));
                     console.error("Missing fields:", { currentUserId, patientName, appointmentDate, doctorType, doctorName });
                     return;
                 }
 
                 if (currentUserId === "mock_user") {
                     const mockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
+                    const dateStr = appointmentDate.replace(/-/g, '');
+                    const sameDayApps = mockApps.filter(a => a.appointment_date === appointmentDate).length;
+                    const mockAptId = `APT${dateStr}${String(sameDayApps + 1).padStart(3, '0')}`;
+
                     mockApps.unshift({
                         id: "mock_" + Date.now(),
+                        appointment_id: mockAptId,
                         patient_name: patientName,
+                        doctor_id: doctorId,
                         doctor_name: doctorName,
                         doctor_type: doctorType,
                         appointment_date: appointmentDate,
@@ -271,8 +397,7 @@
                     });
                     localStorage.setItem("mock_notifications", JSON.stringify(mockNotifs));
 
-                    alert("Appointment Booked Successfully! (Offline Mock Mode)");
-                    window.location.href = "dashboard.html";
+                    showBookingModal("Success", "Appointment Booked Successfully! (Offline Mode)", true);
                     return;
                 }
 
@@ -284,21 +409,19 @@
                             userId: currentUserId,
                             patientName,
                             appointmentDate,
-                            doctorType,
-                            doctorName
+                            doctorId
                         })
                     });
 
                     const data = await response.json();
                     if (response.ok) {
-                        alert("Appointment Booked Successfully!");
-                        window.location.href = "dashboard.html";
+                        showBookingModal("Success", "Appointment Booked Successfully!", true);
                     } else {
-                        alert("Error: " + data.error);
+                        showBookingModal("Booking Error", data.error);
                     }
                 } catch (err) {
                     console.error(err);
-                    alert("Network Error: Could not connect to the booking server.");
+                    showBookingModal("Network Error", "Could not connect to the booking server.");
                 }
             });
         }

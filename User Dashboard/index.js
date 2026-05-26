@@ -22,21 +22,7 @@ async function loadWelcomeName() {
     // Check if welcome text already exists to prevent duplication
     if (document.getElementById("welcomeTextCard")) return;
 
-    let name = localStorage.getItem("userName") || "Valued Patient";
-
-    // Only fetch if not in mock mode
-    if (userId !== "mock_user") {
-        try {
-            const response = await fetch(`http://localhost:10000/api/user/${userId}`);
-            if (response.ok) {
-                const user = await response.json();
-                name = user.name;
-                localStorage.setItem("userName", name); // Update local cache
-            }
-        } catch (err) {
-            console.error("Failed to fetch user name for welcome:", err);
-        }
-    }
+    const cachedName = localStorage.getItem("userName") || "Valued Patient";
 
     const welcomeText = document.createElement("h3");
     welcomeText.id = "welcomeTextCard";
@@ -44,10 +30,57 @@ async function loadWelcomeName() {
     welcomeText.style.marginRight = "20px";
     welcomeText.style.fontSize = "1.1rem";
     welcomeText.style.fontWeight = "600";
-    welcomeText.innerText = `Welcome, ${name}!`;
+    welcomeText.innerText = `Welcome, ${cachedName}!`;
     
     // Insert before search bar
     searchBar.parentElement.insertBefore(welcomeText, searchBar);
+
+    // Only fetch if not in mock mode
+    if (userId !== "mock_user") {
+        try {
+            const response = await fetch(`http://localhost:10000/api/user/${userId}`);
+            if (response.ok) {
+                const user = await response.json();
+                if (user.name && user.name !== cachedName) {
+                    welcomeText.innerText = `Welcome, ${user.name}!`;
+                    localStorage.setItem("userName", user.name); // Update local cache
+                }
+            }
+        } catch (err) {
+            console.error("Failed to fetch user name for welcome:", err);
+        }
+    }
+}
+
+/**
+ * Update the notification badge in the sidebar for Users
+ */
+async function updateNotificationBadge() {
+    const userId = localStorage.getItem("userId");
+    if (!userId || userId === "mock_user") return;
+
+    try {
+        const response = await fetch(`http://localhost:10000/api/user/${userId}/notifications/unread-count`);
+        if (!response.ok) return;
+        const { unreadCount } = await response.json();
+
+        const navItem = document.querySelector(".navigation li a[href*='notification']");
+        if (!navItem) return;
+
+        let badge = navItem.querySelector(".nav-badge");
+        if (unreadCount > 0) {
+            if (!badge) {
+                badge = document.createElement("span");
+                badge.className = "nav-badge";
+                navItem.appendChild(badge);
+            }
+            badge.textContent = unreadCount;
+        } else if (badge) {
+            badge.remove();
+        }
+    } catch (err) {
+        console.error("Failed to update notification badge:", err);
+    }
 }
 
 // Dynamic Logout Listener
@@ -62,61 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-/**
- * Fetch and display Dashboard Stats
+/** 
+ * Removed redundant Dashboard specific loading logic to prevent conflicts 
+ * with page-specific scripts.
  */
-async function loadDashboardStats() {
-    const userId = localStorage.getItem("userId");
-    if (!userId || userId === "mock_user") return;
-
-    try {
-        const response = await fetch(`http://localhost:10000/api/user/${userId}/stats`);
-        if (!response.ok) throw new Error("Failed to fetch stats");
-
-        const stats = await response.json();
-
-        // Mapping stats to UI elements (assuming these IDs exist in dashboard.html)
-        const successEl = document.getElementById("success-count");
-        const pendingEl = document.getElementById("pending-count");
-        const rejectEl = document.getElementById("reject-count");
-
-        if (successEl) successEl.textContent = stats.success;
-        if (pendingEl) pendingEl.textContent = stats.pending;
-        if (rejectEl) rejectEl.textContent = stats.reject;
-    } catch (err) {
-        console.error("Error loading stats:", err);
-    }
-}
-
-/**
- * Fetch and display Recent Appointments
- */
-async function loadRecentAppointments() {
-    const userId = localStorage.getItem("userId");
-    if (!userId || userId === "mock_user") return;
-
-    try {
-        const response = await fetch(`http://localhost:10000/api/user/${userId}/appointments`);
-        if (!response.ok) throw new Error("Failed to fetch appointments");
-
-        const appointments = await response.json();
-        const tableBody = document.querySelector(".recentOrders table tbody");
-
-        if (tableBody) {
-            tableBody.innerHTML = appointments.slice(0, 5).map(app => `
-                <tr>
-                    <td>${app.patient_name}</td>
-                    <td>${app.doctor_name}</td>
-                    <td>${app.booking_slot || "Pending assignment"}</td>
-                    <td><span class="status ${app.status.toLowerCase()}">${app.status}</span></td>
-                </tr>
-            `).join('');
-        }
-    } catch (err) {
-        console.error("Error loading appointments:", err);
-    }
-}
-
 function highlightActiveTab() {
     let matched = false;
     navLinks.forEach((link) => {
@@ -132,12 +114,7 @@ function highlightActiveTab() {
     // Default fallback to Dashboard if directory root or dashboard is opened
     if (!matched || !currentPage || currentPage === "" || currentPage === "User%20Dashboard" || currentPage === "User Dashboard") {
         const dashboardLi = document.querySelector(".navigation li a[href='dashboard.html']");
-        if (dashboardLi) {
-            dashboardLi.parentElement.classList.add("hovered");
-            // Auto-load data if on dashboard
-            loadDashboardStats();
-            loadRecentAppointments();
-        }
+        if (dashboardLi) dashboardLi.parentElement.classList.add("hovered");
     }
 }
 
@@ -145,6 +122,7 @@ function highlightActiveTab() {
 document.addEventListener("DOMContentLoaded", () => {
     highlightActiveTab();
     loadWelcomeName();
+    updateNotificationBadge();
 });
 
 // Handle Hover animations

@@ -8,6 +8,206 @@
     <link rel="stylesheet" href="../assets/app-shell.css">
     <script src="../assets/app-shell.js"></script>
     <link rel="stylesheet" href="index.css">
+    <style>
+        .details .recentOrders {
+            min-height: auto !important;
+        }
+
+        .details table thead td,
+        .details table tbody tr td {
+            text-align: left !important;
+            padding: 12px 15px !important;
+        }
+
+        .details table tbody tr td[colspan] {
+            text-align: center !important;
+        }
+
+        .details table tbody tr:hover {
+            background: var(--primary-color-light) !important;
+            color: var(--text-dark) !important;
+        }
+
+        .serial-input {
+            padding: 7px 8px;
+            border: 1px solid #d6dfdf;
+            border-radius: 6px;
+            background: var(--white);
+        }
+
+        .appointment-action {
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .appointment-action:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Topbar Responsiveness Fix */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 15px;
+        }
+
+        #welcomeTextCard {
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px !important;
+        }
+
+        @media (max-width: 768px) {
+            #welcomeTextCard {
+                font-size: 0.9rem !important;
+                max-width: 120px;
+            }
+            .search {
+                flex: 1;
+                max-width: 180px;
+                margin: 0 5px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #welcomeTextCard {
+                display: none;
+            }
+            .search {
+                margin: 0 5px !important;
+            }
+        }
+
+        /* Tab Navigation Styles */
+        .cardHeader {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start !important;
+        }
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            width: 100%;
+            padding-top: 10px;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+        }
+        .tab-navigation::-webkit-scrollbar {
+            display: none;
+        }
+        .tab-btn {
+            position: relative;
+            padding: 8px 16px;
+            border: 1px solid var(--primary-color-light);
+            background: var(--white);
+            color: var(--primary-color);
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+        .tab-badge {
+            position: absolute;
+            top: -10px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Modal Styles matching User Dashboard */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            position: relative;
+            animation: modalSlideDown 0.4s ease-out;
+        }
+
+        @keyframes modalSlideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h3 {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        .modal-content p {
+            margin-bottom: 30px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn-confirm, .btn-close {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-confirm {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-close {
+            background: #f0f0f0;
+            color: #555;
+        }
+    </style>
 </head>
 
 <body>
@@ -17,7 +217,7 @@
             <ul>
                 <li>
                     <a href="#">
-                        <div class="nav_logo"> <strong>Noorie <span>Clinic</strong><span></span></div>
+                        <div class="nav_logo"> <strong>Noorie <span>Clinic</span></strong></div>
                     </a>
                 </li>
 
@@ -58,7 +258,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a href="../index.html">
                         <span class="icon">
                             <ion-icon name="log-out-outline"></ion-icon>
                         </span>
@@ -127,8 +327,14 @@
             <div class="details">
                 <div class="recentOrders">
                     <div class="cardHeader">
-                        <h2>Recent Appointments</h2>
-                        <a href="#" class="btn">View All</a>
+                        <h2>Appointments</h2>
+                        <div class="tab-navigation">
+                            <button class="tab-btn active" data-tab="upcoming">Upcoming</button>
+                            <button class="tab-btn" data-tab="pending">Requests</button>
+                            <button class="tab-btn" data-tab="past">Past</button>
+                            <button class="tab-btn" data-tab="cancelled">Cancelled</button>
+                            <button class="tab-btn" data-tab="rejected">Rejected</button>
+                        </div>
                     </div>
 
                     <table>
@@ -136,6 +342,7 @@
                             <tr>
                                 <td>Patients Name</td>
                                 <td>Appointment Date</td>
+                                <td>Appt ID</td>
                                 <td>Serial No.</td>
                                 <td>Status</td>
                                 <td>Action</td>
@@ -144,11 +351,23 @@
 
                         <tbody>
                             <tr>
-                                <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-dark);">Loading appointments...</td>
+                                <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-dark);">Loading appointments...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Confirmation Modal -->
+    <div id="doctorActionModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalMessage">Are you sure you want to proceed?</p>
+            <div class="modal-footer">
+                <button id="modalConfirmBtn" class="btn-confirm">Confirm</button>
+                <button id="modalCloseBtn" class="btn-close">Cancel</button>
             </div>
         </div>
     </div>

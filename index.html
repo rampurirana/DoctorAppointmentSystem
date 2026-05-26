@@ -11,6 +11,50 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.4.0/fonts/remixicon.css">
     <link rel="stylesheet" href="index.css">
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            animation: modalSlideDown 0.4s ease-out;
+        }
+        @keyframes modalSlideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-content h3 { margin-bottom: 10px; font-size: 1.5rem; color: #333; }
+        .modal-content p { margin-bottom: 30px; color: #666; line-height: 1.5; }
+        .modal-footer { display: flex; justify-content: center; gap: 15px; }
+        .btn-confirm, .btn-close {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-confirm { background: #12ac8e; color: white; }
+        .btn-close { background: #f0f0f0; color: #555; }
+    </style>
 </head>
 <body>
     <header>
@@ -321,7 +365,7 @@
                     const response = await fetch(backendUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password })
+                        body: JSON.stringify({ email, password, role: selectedRole })
                     });
 
                     if (!response.ok) {
@@ -332,20 +376,19 @@
                             errMsg = errorData.error;
                         } catch(e) {}
                         
-                        const bypass = confirm("Server returned: " + errMsg + "\n\nWould you like to use 'Direct Login' (Offline Mock Mode) to test the dashboard?");
-                        if (bypass) {
+                        showLoginModal("Login Failed", errMsg + "\n\nUse 'Direct Login' (Offline Mode) to test?", () => {
                             localStorage.clear();
                             localStorage.setItem("userId", "mock_user");
                             localStorage.setItem("userName", "Demo Patient");
                             window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
-                        }
+                        });
                         return;
                     }
 
                     const data = await response.json();
 
                     if ((data.user.role || "").toLowerCase() !== selectedRole.toLowerCase()) {
-                        alert(`This account is registered as ${data.user.role}, not ${selectedRole}.`);
+                        showLoginModal("Role Mismatch", `This account is registered as ${data.user.role}, not ${selectedRole}.`);
                         return;
                     }
                     
@@ -365,13 +408,12 @@
                     }
                 } catch (err) {
                     console.error(err);
-                    const bypass = confirm("Could not connect to the live backend server (Render might be sleeping or spinning up).\n\nWould you like to use 'Direct Login' (Offline Mock Mode) to test the dashboard?");
-                    if (bypass) {
+                    showLoginModal("Connection Error", "Backend server is offline. Use 'Direct Login' (Mock Mode)?", () => {
                         localStorage.clear();
                         localStorage.setItem("userId", "mock_user");
                         localStorage.setItem("userName", "Demo Patient");
                         window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
-                    }
+                    });
                 }
             });
         }

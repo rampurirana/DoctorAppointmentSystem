@@ -410,6 +410,7 @@
                                 <td>Doctor Name</td>
                                 <td>Doctor Type</td>
                                 <td>Date</td>
+                                <td>Appt ID</td>
                                 <td>Serial No.</td>
                                 <td>Status</td>
                             </tr>
@@ -417,7 +418,7 @@
 
                         <tbody>
                             <tr>
-                                <td colspan="6" class="no-data" style="padding: 20px; color: var(--text-dark);">Loading appointments...</td>
+                                <td colspan="7" class="no-data" style="padding: 20px; color: var(--text-dark);">Loading appointments...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -426,14 +427,14 @@
         </div>
     </div>
 
-    <!-- Modal for Cancellation Confirmation -->
-    <div id="cancelModal" class="modal">
+    <!-- Generic Modal for User Actions -->
+    <div id="userActionModal" class="modal">
         <div class="modal-content">
-            <h3>Confirm Cancellation</h3>
-            <p id="cancelModalText">Are you sure you want to cancel this appointment?</p>
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalMessage">Are you sure you want to proceed?</p>
             <div class="modal-footer">
-                <button id="confirmCancelBtn" class="btn-confirm">Yes, Cancel</button>
-                <button id="closeModalBtn" class="btn-close">No, Keep it</button>
+                <button id="modalConfirmBtn" class="btn-confirm">Confirm</button>
+                <button id="modalCloseBtn" class="btn-close">Close</button>
             </div>
         </div>
     </div>
@@ -542,9 +543,9 @@
         async function fetchAppointments() {
             if (isMockMode) {
                 const mockAppointments = [
-                    { id: "fixed_1", patient_name: "Rahul Sharma", doctor_name: "Dr. Rampravesh Rana", doctor_type: "Cardiologist", appointment_date: "2026-05-20", booking_slot: "01", status: "Accepted" },
-                    { id: "fixed_2", patient_name: "Priya Singh", doctor_name: "Dr. Aryan Rana", doctor_type: "Dermatologist", appointment_date: "2026-05-22", booking_slot: null, status: "Pending" },
-                    { id: "fixed_3", patient_name: "Amit Kumar", doctor_name: "Dr. Pankaj Yadav", doctor_type: "Orthopedist", appointment_date: "2026-05-18", booking_slot: null, status: "Rejected" }
+                    { id: "fixed_1", appointment_id: "APT20260520001", patient_name: "Rahul Sharma", doctor_name: "Dr. Rampravesh Rana", doctor_type: "Cardiologist", appointment_date: "2026-05-20", booking_slot: "01", status: "Accepted" },
+                    { id: "fixed_2", appointment_id: "APT20260522001", patient_name: "Priya Singh", doctor_name: "Dr. Aryan Rana", doctor_type: "Dermatologist", appointment_date: "2026-05-22", booking_slot: null, status: "Pending" },
+                    { id: "fixed_3", appointment_id: "APT20260518001", patient_name: "Amit Kumar", doctor_name: "Dr. Pankaj Yadav", doctor_type: "Orthopedist", appointment_date: "2026-05-18", booking_slot: null, status: "Rejected" }
                 ];
                 const customMockApps = JSON.parse(localStorage.getItem("mock_appointments") || "[]");
 
@@ -572,7 +573,7 @@
                 console.error(err);
                 const tbody = document.querySelector('.details table tbody');
                 if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="no-data" style="padding: 20px; color: var(--secondary-color);">Failed to fetch live appointments from server.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="padding: 20px; color: var(--secondary-color);">Failed to fetch live appointments from server.</td></tr>`;
                 }
             }
         }
@@ -604,10 +605,11 @@
             if (searchQuery) {
                 filtered = filtered.filter(app => {
                     return (app.patient_name || "").toLowerCase().includes(searchQuery) ||
+                           (String(app.appointment_id || "")).toLowerCase().includes(searchQuery) ||
                            (app.doctor_name || "").toLowerCase().includes(searchQuery) ||
                            (app.doctor_type || "").toLowerCase().includes(searchQuery) ||
                            (app.appointment_date || "").toLowerCase().includes(searchQuery) ||
-                           (app.booking_slot || app.appointment_time || "").toLowerCase().includes(searchQuery) ||
+                           (String(app.booking_slot || "")).toLowerCase().includes(searchQuery) ||
                            (app.status || "").toLowerCase().includes(searchQuery);
                 });
             }
@@ -640,7 +642,7 @@
                 tbody.innerHTML = ""; // Clear placeholders
                 
                 if (appointments.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="no-data" style="padding: 20px;">No appointments found.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="padding: 20px;">No appointments found.</td></tr>`;
                     return;
                 }
 
@@ -662,7 +664,8 @@
                         <td>${app.doctor_name}</td>
                         <td>${app.doctor_type}</td>
                         <td>${dateStr}</td>
-                        <td>${app.booking_slot || 'Pending assignment'}</td>
+                        <td>${app.appointment_id || 'N/A'}</td>
+                        <td>${app.booking_slot || 'Pending'}</td>
                         <td>
                             <div class="status-wrapper">
                                 <span class="status ${statusClass}">${app.status}</span>
@@ -684,23 +687,45 @@
         }
 
         let pendingCancelId = null;
+        let pendingModalAction = null;
+
+        function showUserModal(title, message, onConfirm = null) {
+            const modal = document.getElementById("userActionModal");
+            const titleEl = document.getElementById("modalTitle");
+            const messageEl = document.getElementById("modalMessage");
+            const confirmBtn = document.getElementById("modalConfirmBtn");
+            const closeBtn = document.getElementById("modalCloseBtn");
+
+            titleEl.innerText = title;
+            messageEl.innerText = message;
+
+            if (onConfirm) {
+                confirmBtn.style.display = "block";
+                closeBtn.innerText = "No, Keep it";
+                confirmBtn.innerText = "Yes, Cancel";
+                pendingModalAction = onConfirm;
+            } else {
+                confirmBtn.style.display = "none";
+                closeBtn.innerText = "Close";
+                pendingModalAction = null;
+            }
+            modal.style.display = "flex";
+        }
 
         function cancelAppointment(appointmentId, patientName) {
-            pendingCancelId = appointmentId;
-            const modal = document.getElementById("cancelModal");
-            const modalText = document.getElementById("cancelModalText");
-            if (modal && modalText) {
-                modalText.innerText = `Are you sure you want to cancel the appointment for ${patientName}?`;
-                modal.style.display = "flex";
-            }
+            showUserModal(
+                "Confirm Cancellation", 
+                `Are you sure you want to cancel the appointment for ${patientName}?`, 
+                () => {
+                    pendingCancelId = appointmentId;
+                    executeCancellation();
+                }
+            );
         }
 
         async function executeCancellation() {
             if (!pendingCancelId) return;
             const appointmentId = pendingCancelId;
-
-            const modal = document.getElementById("cancelModal");
-            if (modal) modal.style.display = "none";
             pendingCancelId = null;
 
             if (isMockMode) {
@@ -718,7 +743,7 @@
                 }
 
                 localStorage.setItem("mock_appointments", JSON.stringify(mockApps));
-                alert("Appointment status updated to Cancelled! (Offline Mode)");
+                showUserModal("Cancelled", "Appointment status updated to Cancelled! (Offline Mode)");
                 fetchAppointments();
                 return;
             }
@@ -736,14 +761,14 @@
                 }
 
                 if (res.ok) {
-                    alert(result.message || "Appointment successfully cancelled in database.");
+                    showUserModal("Success", result.message || "Appointment successfully cancelled.");
                     fetchAppointments();
                 } else {
-                    alert("Error: " + (result.error || "Failed to cancel"));
+                    showUserModal("Error", result.error || "Failed to cancel");
                 }
             } catch (err) {
                 console.error("Cancellation error:", err);
-                alert("Network Error: Could not connect to the server.");
+                showUserModal("Network Error", "Could not connect to the server.");
             }
         }
 
@@ -813,20 +838,17 @@
             }
 
             // Modal buttons setup
-            const confirmBtn = document.getElementById("confirmCancelBtn");
-            const closeBtn = document.getElementById("closeModalBtn");
-            const modal = document.getElementById("cancelModal");
-
-            if (confirmBtn) confirmBtn.onclick = executeCancellation;
-            if (closeBtn) closeBtn.onclick = () => {
-                modal.style.display = "none";
-                pendingCancelId = null;
+            document.getElementById("modalConfirmBtn").onclick = () => {
+                if (pendingModalAction) pendingModalAction();
+                document.getElementById("userActionModal").style.display = "none";
+            };
+            document.getElementById("modalCloseBtn").onclick = () => {
+                document.getElementById("userActionModal").style.display = "none";
             };
 
             window.onclick = (event) => {
-                if (event.target == modal) {
-                    modal.style.display = "none";
-                    pendingCancelId = null;
+                if (event.target == document.getElementById("userActionModal")) {
+                    document.getElementById("userActionModal").style.display = "none";
                 }
             };
         });

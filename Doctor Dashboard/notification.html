@@ -8,6 +8,133 @@
     <link rel="stylesheet" href="../assets/app-shell.css">
     <script src="../assets/app-shell.js"></script>
     <link rel="stylesheet" href="index.css">
+    <style>
+        .details .recentOrders {
+            min-height: auto !important;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .notification_set {
+            transition: max-height 0.4s ease;
+            overflow: hidden;
+        }
+
+        .details .recentOrders .notification:hover {
+            background: transparent !important;
+            color: inherit !important;
+        }
+
+        .notification {
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 15px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .notification p {
+            font-size: 0.95rem;
+            color: var(--text-dark);
+        }
+
+        /* Topbar Responsiveness Fix */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 15px;
+        }
+
+        #welcomeTextCard {
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px !important;
+        }
+
+        @media (max-width: 768px) {
+            #welcomeTextCard {
+                font-size: 0.9rem !important;
+                max-width: 120px;
+            }
+            .search {
+                flex: 1;
+                max-width: 180px;
+                margin: 0 5px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #welcomeTextCard {
+                display: none;
+            }
+            .search {
+                margin: 0 5px !important;
+            }
+        }
+
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-badge {
+            background: #e74c3c;
+            color: white;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: none;
+        }
+
+        /* Modal Styles matching Dashboard */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            animation: modalSlideDown 0.4s ease-out;
+        }
+        @keyframes modalSlideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-content h3 { margin-bottom: 10px; font-size: 1.5rem; color: var(--text-dark); }
+        .modal-content p { margin-bottom: 30px; color: #666; line-height: 1.5; }
+        .modal-footer { display: flex; justify-content: center; gap: 15px; }
+        .btn-confirm, .btn-close {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-confirm { background: var(--primary-color); color: white; }
+        .btn-close { background: #f0f0f0; color: #555; }
+    </style>
 </head>
 
 <body>
@@ -17,7 +144,7 @@
             <ul>
                 <li>
                     <a href="#">
-                        <div class="nav_logo"> <strong>Noorie <span>Clinic</strong><span></span></div>
+                        <div class="nav_logo"> <strong>Noorie <span>Clinic</span></strong></div>
                     </a>
                 </li>
 
@@ -58,7 +185,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a href="../index.html">
                         <span class="icon">
                             <ion-icon name="log-out-outline"></ion-icon>
                         </span>
@@ -87,68 +214,23 @@
                 </div>
             </div>
 
-            <!-- ==================== Notification Detail ==================== -->
+            <!-- ================ Notification Detailed List ================= -->
             <div class="details">
                 <div class="recentOrders">
                     <div class="cardHeader">
-                        <h2>Notifications</h2>
-                        <a href="#" class="btn">View All</a>
+                        <div class="header-title-container">
+                            <h2>Notifications</h2>
+                            <span id="notifCountBadge" class="header-badge">0</span>
+                        </div>
+                        <div class="header-actions">
+                            <a href="#" class="btn" id="viewAllBtn">View All</a>
+                            <a href="#" class="btn" id="clearAllBtn" style="background: #e74c3c; margin-left: 5px;">Clear All</a>
+                        </div>
                     </div>
-            
+
                     <div class="notification_set">
-                        <div class="notification">
-                            <p>Notification number : 11</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 10</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 09</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 08</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 07</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 06</p>
-                            <span class="time">01 Hours ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 05</p>
-                            <span class="time">50 min ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 04</p>
-                            <span class="time">40 min ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 03</p>
-                            <span class="time">30 min ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 02</p>
-                            <span class="time">20 min ago</span>
-                        </div>
-            
-                        <div class="notification">
-                            <p>Notification number : 01
-                            <span class="time">10 min ago</span> </p>
+                        <div class="notification" style="text-align: center; padding: 20px;">
+                            <p>Loading notifications...</p>
                         </div>
                     </div>
                 </div>
@@ -156,8 +238,153 @@
         </div>
     </div>
 
+    <!-- Action Confirmation Modal -->
+    <div id="doctorActionModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalMessage">Are you sure you want to proceed?</p>
+            <div class="modal-footer">
+                <button id="modalConfirmBtn" class="btn-confirm">Confirm</button>
+                <button id="modalCloseBtn" class="btn-close">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- =========== Scripts =========  -->
     <script src="doctor.js"></script>
+    <script>
+        (() => {
+            const currentDoctorId = localStorage.getItem("userId");
+            const maxVisible = 10;
+            let allNotifications = [];
+            let showAll = false;
+
+            function renderNotifications(notifications) {
+                const container = document.querySelector(".notification_set");
+                if (!container) return;
+
+                if (notifications.length === 0) {
+                    container.innerHTML = `<div class="notification" style="text-align: center; padding: 20px;"><p>No notifications yet.</p></div>`;
+                    return;
+                }
+
+                const countBadge = document.getElementById("notifCountBadge");
+                if (countBadge) {
+                    countBadge.textContent = notifications.length;
+                    countBadge.style.display = "inline-block";
+                }
+
+                container.innerHTML = "";
+                notifications.forEach((notification) => {
+                    const item = document.createElement("div");
+                    item.className = "notification";
+                    item.innerHTML = `
+                        <p>${notification.message}</p>
+                        <span class="time">${new Date(notification.created_at).toLocaleString()}</span>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            async function markNotificationsAsRead() {
+                if (!currentDoctorId) return;
+                try {
+                    await fetch(`http://localhost:10000/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications/read`, {
+                        method: 'PATCH'
+                    });
+                    if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+                } catch (err) {
+                    console.error("Failed to mark notifications as read:", err);
+                }
+            }
+
+            function displayNotifications() {
+                const visibleList = showAll ? allNotifications : allNotifications.slice(0, maxVisible);
+                renderNotifications(visibleList);
+
+                const viewAllBtn = document.getElementById("viewAllBtn");
+                const clearAllBtn = document.getElementById("clearAllBtn");
+
+                if (viewAllBtn) {
+                    viewAllBtn.style.display = allNotifications.length > maxVisible ? "inline-block" : "none";
+                    viewAllBtn.textContent = showAll ? "Show Less" : "View All";
+                }
+
+                if (clearAllBtn) {
+                    clearAllBtn.style.display = allNotifications.length > 0 ? "inline-block" : "none";
+                }
+            }
+
+            async function fetchNotifications() {
+                if (!currentDoctorId) return;
+
+                try {
+                    const response = await fetch(`http://localhost:10000/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications`);
+                    const contentType = response.headers.get("content-type") || "";
+                    if (!contentType.includes("application/json")) {
+                        throw new Error("The backend API returned a web page instead of data. Restart the backend server.");
+                    }
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || "Failed to load notifications");
+                    allNotifications = result;
+                    displayNotifications();
+                    markNotificationsAsRead();
+                } catch (err) {
+                    const container = document.querySelector(".notification_set");
+                    if (container) {
+                        container.innerHTML = "";
+                        const item = document.createElement("div");
+                        const message = document.createElement("p");
+                        item.className = "notification";
+                        item.style.textAlign = "center";
+                        item.style.padding = "20px";
+                        message.textContent = err.message;
+                        item.appendChild(message);
+                        container.appendChild(item);
+                    }
+                }
+            }
+
+            async function clearNotifications() {
+                if (!currentDoctorId) return;
+                
+                showDoctorModal("Clear All", "Are you sure you want to delete all notifications?", async () => {
+                    try {
+                        const response = await fetch(`http://localhost:10000/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications`, {
+                            method: 'DELETE'
+                        });
+
+                        const contentType = response.headers.get("content-type") || "";
+                        if (!contentType.includes("application/json")) {
+                            throw new Error("Server error: Received HTML instead of JSON.");
+                        }
+
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.error || "Failed to clear notifications");
+                        
+                        allNotifications = [];
+                        displayNotifications();
+                        showDoctorModal("Success", "Notifications cleared.");
+                    } catch (err) {
+                        showDoctorModal("Error", err.message);
+                    }
+                });
+            }
+
+            document.addEventListener("DOMContentLoaded", () => {
+                document.getElementById("viewAllBtn")?.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    showAll = !showAll;
+                    displayNotifications();
+                });
+                document.getElementById("clearAllBtn")?.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    clearNotifications();
+                });
+                fetchNotifications();
+            });
+        })();
+    </script>
 
     <!-- ====== ionicons ======= -->
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>

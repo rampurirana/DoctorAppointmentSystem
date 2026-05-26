@@ -8,6 +8,126 @@
     <link rel="stylesheet" href="../assets/app-shell.css">
     <script src="../assets/app-shell.js"></script>
     <link rel="stylesheet" href="index.css">
+    <style>
+        .form_row select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--primary-color-light);
+            outline: none;
+            background-color: white;
+        }
+        .form_row input[readonly] {
+            background-color: #f4f4f4;
+            color: #888;
+            cursor: not-allowed;
+            border: 1px solid #ccc !important;
+        }
+        .form_row .lock-hint {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .form_row .lock-hint ion-icon {
+            font-size: 13px;
+        }
+        .profile_main {
+            display: block; /* Change from flex to allow form wrapping */
+        }
+        .form_container_wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .profile_left, .profile_right {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        /* Topbar Responsiveness Fix */
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 15px;
+        }
+
+        #welcomeTextCard {
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px !important;
+        }
+
+        @media (max-width: 768px) {
+            #welcomeTextCard {
+                font-size: 0.9rem !important;
+                max-width: 120px;
+            }
+            .search {
+                flex: 1;
+                max-width: 180px;
+                margin: 0 5px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #welcomeTextCard {
+                display: none;
+            }
+            .search {
+                margin: 0 5px !important;
+            }
+        }
+
+        /* Modal Styles matching Dashboard */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            animation: modalSlideDown 0.4s ease-out;
+        }
+        @keyframes modalSlideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-content h3 { margin-bottom: 10px; font-size: 1.5rem; color: var(--text-dark); }
+        .modal-content p { margin-bottom: 30px; color: #666; line-height: 1.5; }
+        .modal-footer { display: flex; justify-content: center; gap: 15px; }
+        .btn-confirm, .btn-close {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-confirm { background: var(--primary-color); color: white; }
+        .btn-close { background: #f0f0f0; color: #555; }
+    </style>
 </head>
 
 <body>
@@ -17,7 +137,7 @@
             <ul>
                 <li>
                     <a href="#">
-                        <div class="nav_logo"> <strong>Noorie <span>Clinic</strong><span></span></div>
+                        <div class="nav_logo"> <strong>Noorie <span>Clinic</span></strong></div>
                     </a>
                 </li>
 
@@ -58,7 +178,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a href="../index.html">
                         <span class="icon">
                             <ion-icon name="log-out-outline"></ion-icon>
                         </span>
@@ -90,79 +210,421 @@
             <!-- =============== Profile Section =============== -->
             <div class="profile_container">
                 <div class="profile_main">
-                    <div class="profile_left">
-                        <form action="">
-                            <div class="form_row">
-                                <label for="name">Name</label>
-                                <input type="text" id="name" value="RAMPRAVESH RANA">
+                    <form id="doctorProfileForm">
+                        <div class="form_container_wrapper">
+                            <div class="profile_left">
+                                <div class="form_row">
+                                    <label for="name">Full Name</label>
+                                    <input type="text" id="name" placeholder="Loading...">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="specialty">Medical Specialty</label>
+                                    <select id="specialty">
+                                        <option value="General Physician">General Physician</option>
+                                        <option value="Cardiologist">Cardiologist</option>
+                                        <option value="Neurosurgeon">Neurosurgeon</option>
+                                        <option value="Dermatologist">Dermatologist</option>
+                                        <option value="Pediatrics">Pediatrics</option>
+                                    </select>
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="is_available">Work Status</label>
+                                    <select id="is_available">
+                                        <option value="true">Available for Appointments</option>
+                                        <option value="false">On Leave / Not Available</option>
+                                    </select>
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="mobile">Mobile Number</label>
+                                    <input type="tel" id="mobile" maxlength="10" placeholder="Loading...">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="email">Email ID</label>
+                                    <input type="email" id="email" placeholder="Loading...">
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="gender">Gender</label>
+                                    <select id="gender">
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="form_row">
+                                    <label for="aadhaar">Aadhaar Number</label>
+                                    <input type="text" id="aadhaar" maxlength="12" placeholder="Loading...">
+                                </div>
                             </div>
 
-                            <div class="form_row">
-                                <label for="mobile">Mobile Number</label>
-                                <input type="tel" id="mobile" value="+91 6204996033">
-                            </div>
+                            <div class="profile_right">
+                                <div class="form_row">
+                                    <label for="blood_group">Blood Group</label>
+                                    <select id="blood_group">
+                                        <option value="A+">A+</option>
+                                        <option value="A-">A-</option>
+                                        <option value="B+">B+</option>
+                                        <option value="B-">B-</option>
+                                        <option value="AB+">AB+</option>
+                                        <option value="AB-">AB-</option>
+                                        <option value="O+">O+</option>
+                                        <option value="O-">O-</option>
+                                    </select>
+                                </div>
 
-                            <div class="form_row">
-                                <label for="email">Email ID</label>
-                                <input type="email" id="email" value="rampraveshrana1435@gmail.com">
-                            </div>
+                                <div class="form_row">
+                                    <label for="country">Country</label>
+                                    <input type="text" id="country" value="INDIA" readonly>
+                                </div>
 
-                            <div class="form_row">
-                                <label for="gender">Gender<label>
-                                <input type="text" id="gender" value="MALE">
-                            </div>
+                                <div class="form_row">
+                                    <label for="state">State</label>
+                                    <select id="state" onchange="updateDistrictDropdown(this.value)">
+                                        <option value="" disabled selected>Select State</option>
+                                        <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                        <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                        <option value="Assam">Assam</option>
+                                        <option value="Bihar">Bihar</option>
+                                        <option value="Chhattisgarh">Chhattisgarh</option>
+                                        <option value="Goa">Goa</option>
+                                        <option value="Gujarat">Gujarat</option>
+                                        <option value="Haryana">Haryana</option>
+                                        <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                        <option value="Jharkhand">Jharkhand</option>
+                                        <option value="Karnataka">Karnataka</option>
+                                        <option value="Kerala">Kerala</option>
+                                        <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                        <option value="Maharashtra">Maharashtra</option>
+                                        <option value="Manipur">Manipur</option>
+                                        <option value="Meghalaya">Meghalaya</option>
+                                        <option value="Mizoram">Mizoram</option>
+                                        <option value="Nagaland">Nagaland</option>
+                                        <option value="Odisha">Odisha</option>
+                                        <option value="Punjab">Punjab</option>
+                                        <option value="Rajasthan">Rajasthan</option>
+                                        <option value="Sikkim">Sikkim</option>
+                                        <option value="Tamil Nadu">Tamil Nadu</option>
+                                        <option value="Telangana">Telangana</option>
+                                        <option value="Tripura">Tripura</option>
+                                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                        <option value="Uttarakhand">Uttarakhand</option>
+                                        <option value="West Bengal">West Bengal</option>
+                                        <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                        <option value="Chandigarh">Chandigarh</option>
+                                        <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                                        <option value="Delhi">Delhi</option>
+                                        <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                        <option value="Ladakh">Ladakh</option>
+                                        <option value="Lakshadweep">Lakshadweep</option>
+                                        <option value="Puducherry">Puducherry</option>
+                                    </select>
+                                </div>
 
-                            <div class="form_row">
-                                <label for="aadhaar">Aadhaar Number</label>
-                                <input type="text" id="aadhaar" value="908041083824">
-                            </div>
+                                <div class="form_row">
+                                    <label for="district">District</label>
+                                    <select id="district">
+                                        <option value="" disabled selected>First Select State</option>
+                                    </select>
+                                </div>
 
-                            <div class="form_row">
-                                <label for="blood_group">Blood Group</label>
-                                <input type="text" id="blood_group" value="Blood Group O+">
-                            </div>
+                                <div class="form_row">
+                                    <label for="pincode">Pin Code</label>
+                                    <input type="text" id="pincode" maxlength="6" placeholder="Loading...">
+                                </div>
 
-                            <div class="form_row">
-                                <label for="country">Country<label>
-                                <input type="text" id="country" value="INDIA">
-                            </div>
-
-                            <div class="form_row">
-                                <label for="state">State</label>
-                                <input type="text" id="state" value="JHARKHAND">
-                            </div>
-
-                            <div class="form_row">
-                                <label for="district">District</label>
-                                <input type="text" id="district" value="HAZARIBAGH">
-                            </div>
-
-                            <div class="form_row">
-                                <label for="pincode">Pin Code</label>
-                                <input type="text" id="pincode" value="825323">
-                            </div>
-                        </form>
-                    </div>
-
-                    <div class="profile_right">
-                        <div class="image_upload">
-                            <img src="customer01.jpg" alt="Profile Photo">
-                            <p>Select image in JPG/JPEG</p>
-                            <input type="file" accept="image/jpeg">
-
-                            <div class="button_field">
-                                <button type="submit">Update Profile</button>
+                                <div class="button_field" style="margin-top: 30px; width: 100%; text-align: center;">
+                                    <button type="submit">Update Professional Profile</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
 
         </div>
     </div>
 
+    <!-- Action Confirmation Modal -->
+    <div id="doctorActionModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Status</h3>
+            <p id="modalMessage"></p>
+            <div class="modal-footer">
+                <button id="modalConfirmBtn" class="btn-confirm">Confirm</button>
+                <button id="modalCloseBtn" class="btn-close">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- =========== Scripts =========  -->
     <script src="doctor.js"></script>
+    <script>
+        const docId = localStorage.getItem("userId");
+        const apiUrl = "http://localhost:10000/api/doctor/profile";
+
+        // State-District Data Mapping
+        const stateDistricts = {
+            "Andhra Pradesh": ["Anantapur", "Chittoor", "East Godavari", "Guntur", "Krishna", "Kurnool", "Nellore", "Prakasam", "Srikakulam", "Visakhapatnam", "Vizianagaram", "West Godavari", "YSR Kadapa"],
+            "Arunachal Pradesh": ["Anjaw", "Changlang", "Dibang Valley", "East Kameng", "East Siang", "Kra Daadi", "Kurung Kumey", "Lohit", "Longding", "Lower Dibang Valley", "Lower Siang", "Lower Subansiri", "Namsai", "Pakke-Kessang", "Papum Pare", "Shi Yomi", "Siang", "Tawang", "Tirap", "Upper Siang", "Upper Subansiri", "West Kameng", "West Siang"],
+            "Assam": ["Baksa", "Barpeta", "Biswanath", "Bongaigaon", "Cachar", "Charaideo", "Chirang", "Darrang", "Dhemaji", "Dhubri", "Dibrugarh", "Dima Hasao", "Goalpara", "Golaghat", "Hailakandi", "Hojai", "Jorhat", "Kamrup Metropolitan", "Kamrup", "Karbi Anglong", "Karimganj", "Kokrajhar", "Lakhimpur", "Majuli", "Morigaon", "Nagaon", "Nalbari", "Sivasagar", "Sonitpur", "South Salmara-Mankachar", "Tinsukia", "Udalguri", "West Karbi Anglong"],
+            "Bihar": ["Araria", "Arwal", "Aurangabad", "Banka", "Begusarai", "Bhagalpur", "Bhojpur", "Buxar", "Darbhanga", "East Champaran", "Gaya", "Gopalganj", "Jamui", "Jehanabad", "Kaimur", "Katihar", "Khagaria", "Kishanganj", "Lakhisarai", "Madhepura", "Madhubani", "Munger", "Muzaffarpur", "Nalanda", "Nawada", "Patna", "Purnia", "Rohtas", "Saharsa", "Samastipur", "Saran", "Sheikhpura", "Sheohar", "Sitamarhi", "Siwan", "Supaul", "Vaishali", "West Champaran"],
+            "Chhattisgarh": ["Balod", "Baloda Bazar", "Balrampur", "Bastar", "Bemetara", "Bijapur", "Bilaspur", "Dantewada", "Dhamtari", "Durg", "Gariaband", "Gaurela-Pendra-Marwahi", "Janjgir-Champa", "Jashpur", "Kabirdham", "Kanker", "Kondagaon", "Korba", "Koriya", "Mahasamund", "Mungeli", "Narayanpur", "Raigarh", "Raipur", "Rajnandgaon", "Sukma", "Surajpur", "Surguja"],
+            "Goa": ["North Goa", "South Goa"],
+            "Gujarat": ["Ahmedabad", "Amreli", "Anand", "Aravalli", "Banaskantha", "Bharuch", "Bhavnagar", "Botad", "Chhota Udaipur", "Dahod", "Dang", "Devbhoomi Dwarka", "Gandhinagar", "Gir Somnath", "Jamnagar", "Junagadh", "Kheda", "Kutch", "Mahisagar", "Mehsana", "Morbi", "Narmada", "Navsari", "Panchmahal", "Patan", "Porbandar", "Rajkot", "Sabarkantha", "Surat", "Surendranagar", "Tapi", "Vadodara", "Valsad"],
+            "Haryana": ["Ambala", "Bhiwani", "Charkhi Dadri", "Faridabad", "Fatehabad", "Gurugram", "Hisar", "Jhajjar", "Jind", "Kaithal", "Karnal", "Kurukshetra", "Mahendragarh", "Nuh", "Palwal", "Panchkula", "Panipat", "Rewari", "Rohtak", "Sirsa", "Sonipat", "Yamunanagar"],
+            "Himachal Pradesh": ["Bilaspur", "Chamba", "Hamirpur", "Kangra", "Kinnaur", "Kullu", "Lahaul and Spiti", "Mandi", "Shimla", "Sirmaur", "Solan", "Una"],
+            "Jharkhand": ["Bokaro", "Chatra", "Deoghar", "Dhanbad", "Dumka", "East Singhbhum", "Garhwa", "Giridih", "Godda", "Gumla", "Hazaribagh", "Jamtara", "Khunti", "Koderma", "Latehar", "Lohardaga", "Pakur", "Palamu", "Ramgarh", "Ranchi", "Sahebganj", "Seraikela-Kharsawan", "Simdega", "West Singhbhum"],
+            "Karnataka": ["Bagalkot", "Ballari", "Belagavi", "Bengaluru Rural", "Bengaluru Urban", "Bidar", "Chamarajanagar", "Chikkaballapur", "Chikkamagaluru", "Chitradurga", "Dakshina Kannada", "Davangere", "Dharwad", "Gadag", "Hassan", "Haveri", "Kalaburagi", "Kodagu", "Kolar", "Koppal", "Mandya", "Mysuru", "Raichur", "Ramanagara", "Shivamogga", "Tumakuru", "Udupi", "Uttara Kannada", "Vijayapura", "Yadgir"],
+            "Kerala": ["Alappuzha", "Ernakulam", "Idukki", "Kannur", "Kasaragod", "Kollam", "Kottayam", "Kozhikode", "Malappuram", "Palakkad", "Pathanamthitta", "Thiruvananthapuram", "Thrissur", "Wayanad"],
+            "Madhya Pradesh": ["Agar Malwa", "Alirajpur", "Anuppur", "Ashoknagar", "Balaghat", "Barwani", "Betul", "Bhind", "Bhopal", "Burhanpur", "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Dindori", "Guna", "Gwalior", "Harda", "Hoshangabad", "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Mandla", "Mandsaur", "Morena", "Narsinghpur", "Neemuch", "Panna", "Raisen", "Rajgarh", "Ratlam", "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shahdol", "Shajapur", "Sheopur", "Shivpuri", "Sidhi", "Singrauli", "Tikamgarh", "Ujjain", "Umaria", "Vidisha"],
+            "Maharashtra": ["Ahmednagar", "Akola", "Amravati", "Aurangabad", "Beed", "Bhandara", "Buldhana", "Chandrapur", "Dhule", "Gadchiroli", "Gondia", "Hingoli", "Jalgaon", "Jalna", "Kolhapur", "Latur", "Mumbai City", "Mumbai Suburban", "Nagpur", "Nanded", "Nandurbar", "Nashik", "Osmanabad", "Palghar", "Parbhani", "Pune", "Raigad", "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur", "Thane", "Wardha", "Washim", "Yavatmal"],
+            "Manipur": ["Bishnupur", "Chandel", "Churachandpur", "Imphal East", "Imphal West", "Jiribam", "Kakching", "Kamjong", "Kangpokpi", "Noney", "Pherzawl", "Senapati", "Tamenglong", "Tengnoupal", "Thoubal", "Ukhrul"],
+            "Meghalaya": ["East Garo Hills", "East Jaintia Hills", "East Khasi Hills", "North Garo Hills", "Ri Bhoi", "South Garo Hills", "South West Garo Hills", "South West Khasi Hills", "West Garo Hills", "West Jaintia Hills", "West Khasi Hills"],
+            "Mizoram": ["Aizawl", "Champhai", "Hnahthial", "Khawzawl", "Kolasib", "Lawngtlai", "Lunglei", "Mamit", "Saiha", "Serchhip", "Saitual"],
+            "Nagaland": ["Dimapur", "Kiphire", "Kohima", "Longleng", "Mokokchung", "Mon", "Peren", "Phek", "Tuensang", "Wokha", "Zunheboto", "Noklak"],
+            "Odisha": ["Angul", "Balangir", "Balasore", "Bargarh", "Bhadrak", "Boudh", "Cuttack", "Debagarh", "Dhenkanal", "Gajapati", "Ganjam", "Jagatsinghpur", "Jajpur", "Jharsuguda", "Kalahandi", "Kandhamal", "Kendrapara", "Kendujhar", "Khordha", "Koraput", "Malkangiri", "Mayurbhanj", "Nabarangpur", "Nayagarh", "Nuapada", "Puri", "Rayagada", "Sambalpur", "Subarnapur", "Sundargarh"],
+            "Punjab": ["Amritsar", "Barnala", "Bathinda", "Faridkot", "Fatehgarh Sahib", "Fazilka", "Ferozepur", "Gurdaspur", "Hoshiarpur", "Jalandhar", "Kapurthala", "Ludhiana", "Mansa", "Moga", "Muktsar", "Pathankot", "Patiala", "Rupnagar", "Sahibzada Ajit Singh Nagar", "Sangrur", "Shaheed Bhagat Singh Nagar", "Tarn Taran"],
+            "Rajasthan": ["Ajmer", "Alwar", "Banswara", "Baran", "Barmer", "Bharatpur", "Bhilwara", "Bikaner", "Bundi", "Chittorgarh", "Churu", "Dausa", "Dholpur", "Dungarpur", "Hanumangarh", "Jaipur", "Jaisalmer", "Jalore", "Jhalawar", "Jhunjhunu", "Jodhpur", "Karauli", "Kota", "Nagaur", "Pali", "Pratapgarh", "Rajsamand", "Sawai Madhopur", "Sikar", "Sirohi", "Sri Ganganagar", "Tonk", "Udaipur"],
+            "Sikkim": ["East Sikkim", "North Sikkim", "South Sikkim", "West Sikkim"],
+            "Tamil Nadu": ["Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupattur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"],
+            "Telangana": ["Adilabad", "Bhadradri Kothagudem", "Hyderabad", "Jagtial", "Jangaon", "Jayashankar Bhupalpally", "Jogulamba Gadwal", "Kamareddy", "Karimnagar", "Khammam", "Komaram Bheem", "Mahabubabad", "Mahabubnagar", "Mancherial", "Medak", "Medchal-Malkajgiri", "Mulugu", "Nagarkurnool", "Nalgonda", "Narayanpet", "Nirmal", "Nizamabad", "Peddapalli", "Rajanna Sircilla", "Ranga Reddy", "Sangareddy", "Siddipet", "Suryapet", "Vikarabad", "Wanaparthy", "Warangal Rural", "Warangal Urban", "Yadadri Bhuvanagiri"],
+            "Tripura": ["Dhalai", "Gomati", "Khowai", "North Tripura", "Sepahijala", "South Tripura", "Unakoti", "West Tripura"],
+            "Uttar Pradesh": ["Agra", "Aligarh", "Ambedkar Nagar", "Amethi", "Amroha", "Auraiya", "Ayodhya", "Azamgarh", "Baghpat", "Bahraich", "Ballia", "Balrampur", "Banda", "Barabanki", "Bareilly", "Basti", "Bhadohi", "Bijnor", "Budaun", "Bulandshahr", "Chandauli", "Chitrakoot", "Deoria", "Etah", "Etawah", "Farrukhabad", "Fatehpur", "Firozabad", "Gautam Buddha Nagar", "Ghaziabad", "Ghazipur", "Gonda", "Gorakhpur", "Hamirpur", "Hapur", "Hardoi", "Hathras", "Jalaun", "Jaunpur", "Jhansi", "Kannauj", "Kanpur Dehat", "Kanpur Nagar", "Kasganj", "Kaushambi", "Kheri", "Kushinagar", "Lalitpur", "Lucknow", "Maharajganj", "Mahoba", "Mainpuri", "Mathura", "Mau", "Meerut", "Mirzapur", "Moradabad", "Muzaffarnagar", "Pilibhit", "Pratapgarh", "Prayagraj", "Raebareli", "Rampur", "Saharanpur", "Sambhal", "Sant Kabir Nagar", "Shahjahanpur", "Shamli", "Shrawasti", "Siddharthnagar", "Sitapur", "Sonbhadra", "Sultanpur", "Unnao", "Varanasi"],
+            "Uttarakhand": ["Almora", "Bageshwar", "Chamoli", "Champawat", "Dehradun", "Haridwar", "Nainital", "Pauri Garhwal", "Pithoragarh", "Rudraprayag", "Tehri Garhwal", "Udham Singh Nagar", "Uttarkashi"],
+            "West Bengal": ["Alipurduar", "Bankura", "Birbhum", "Cooch Behar", "Dakshin Dinajpur", "Darjeeling", "Hooghly", "Howrah", "Jalpaiguri", "Jhargram", "Kalimpong", "Kolkata", "Malda", "Murshidabad", "Nadia", "North 24 Parganas", "Paschim Bardhaman", "Paschim Medinipur", "Purba Bardhaman", "Purba Medinipur", "Purulia", "South 24 Parganas", "Uttar Dinajpur"],
+            "Andaman and Nicobar Islands": ["Nicobar", "North and Middle Andaman", "South Andaman"],
+            "Chandigarh": ["Chandigarh"],
+            "Dadra and Nagar Haveli and Daman and Diu": ["Dadra and Nagar Haveli", "Daman", "Diu"],
+            "Delhi": ["Central Delhi", "East Delhi", "New Delhi", "North Delhi", "North East Delhi", "North West Delhi", "Shahdara", "South Delhi", "South East Delhi", "South West Delhi", "West Delhi"],
+            "Jammu and Kashmir": ["Anantnag", "Bandipora", "Baramulla", "Budgam", "Doda", "Ganderbal", "Jammu", "Kathua", "Kishtwar", "Kulgam", "Kupwara", "Poonch", "Pulwama", "Rajouri", "Ramban", "Reasi", "Samba", "Shopian", "Srinagar", "Udhampur"],
+            "Ladakh": ["Kargil", "Leh"],
+            "Lakshadweep": ["Lakshadweep"],
+            "Puducherry": ["Karaikal", "Mahe", "Puducherry", "Yanam"]
+        };
+
+        function updateDistrictDropdown(state, selectedDistrict = "") {
+            const districtSelect = document.getElementById("district");
+            districtSelect.innerHTML = '<option value="" disabled selected>Select District</option>';
+            if (stateDistricts[state]) {
+                stateDistricts[state].forEach(dist => {
+                    const opt = new Option(dist, dist);
+                    districtSelect.add(opt);
+                });
+                if (selectedDistrict) districtSelect.value = selectedDistrict;
+            }
+        }
+
+        // Fetch profile data on page load
+        async function fetchDoctorProfile() {
+            if (!docId) return;
+            try {
+                const response = await fetch(`${apiUrl}/${docId}`);
+                if (!response.ok) throw new Error("Failed to load profile");
+                const data = await response.json();
+
+                // 1. Full name and email ID fetched and displayed (and placeholders cleared)
+                const nameInput = document.getElementById("name");
+                const emailInput = document.getElementById("email");
+                nameInput.value = data.name || "";
+                emailInput.value = data.email || "";
+                nameInput.removeAttribute("placeholder");
+                emailInput.removeAttribute("placeholder");
+
+                // 2. Keep medical specialty not updatable
+                const specialtySelect = document.getElementById("specialty");
+                if (![...specialtySelect.options].some(opt => opt.value === data.specialty)) {
+                    const newOption = new Option(data.specialty, data.specialty);
+                    specialtySelect.add(newOption);
+                }
+                specialtySelect.value = data.specialty || "General Physician";
+                specialtySelect.disabled = true; // Enforce non-updatable specialty
+
+                document.getElementById("is_available").value = typeof data.is_available === 'boolean' ? String(data.is_available) : "true";
+                document.getElementById("gender").value = data.gender || "Male";
+                document.getElementById("blood_group").value = data.blood_group || "O+";
+
+                // 3. Keep NA when doctor visits his profile (initial display)
+                document.getElementById("mobile").value = data.mobile || "NA";
+                document.getElementById("aadhaar").value = data.aadhaar || "NA";
+                document.getElementById("country").value = data.country || "INDIA";
+                document.getElementById("pincode").value = data.pincode || "NA";
+
+                // Remove placeholders for these fields too, as they now have values or "NA"
+                document.getElementById("mobile").removeAttribute("placeholder");
+                document.getElementById("aadhaar").removeAttribute("placeholder");
+                document.getElementById("pincode").removeAttribute("placeholder");
+
+                if (data.state) {
+                    document.getElementById("state").value = data.state;
+                    updateDistrictDropdown(data.state, data.district);
+                } else {
+                    document.getElementById("district").innerHTML = '<option value="" disabled selected>First Select State</option>';
+                }
+
+                setupNameEmailFields(data);
+            } catch (err) {
+                console.error('Failed to fetch doctor profile:', err);
+                showDoctorModal("Error", "Error loading profile. Please ensure the backend server is running.");
+            }
+        }
+
+        function setupNameEmailFields(data) {
+            const nameInput = document.getElementById("name");
+            const emailInput = document.getElementById("email");
+            const isNameLocked = Boolean(data.name_updated);
+            const isEmailLocked = Boolean(data.email_updated);
+
+            if (nameInput && !nameInput.parentElement.querySelector(".lock-hint")) {
+                if (isNameLocked) nameInput.setAttribute("readonly", true);
+                const hint = document.createElement("span");
+                hint.className = "lock-hint";
+                hint.innerHTML = `<ion-icon name="${isNameLocked ? 'lock-closed-outline' : 'information-circle-outline'}"></ion-icon> Name can only be updated once`;
+                nameInput.parentElement.appendChild(hint);
+            }
+
+            if (emailInput && !emailInput.parentElement.querySelector(".lock-hint")) {
+                if (isEmailLocked) emailInput.setAttribute("readonly", true);
+                const hint = document.createElement("span");
+                hint.className = "lock-hint";
+                hint.innerHTML = `<ion-icon name="${isEmailLocked ? 'lock-closed-outline' : 'information-circle-outline'}"></ion-icon> Email can only be updated once`;
+                emailInput.parentElement.appendChild(hint);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("doctorProfileForm");
+            const inputs = document.querySelectorAll('#doctorProfileForm input');
+            const numericFields = ['mobile', 'aadhaar', 'pincode'];
+
+            inputs.forEach(input => {
+                const labelText = input.previousElementSibling?.innerText || "data";
+
+                input.addEventListener("focus", () => {
+                    if (input.hasAttribute("readonly")) return;
+                    if (input.value === "NA") {
+                        input.value = "";
+                    }
+                    input.placeholder = `Please enter ${labelText.toLowerCase()}`;
+                });
+
+                input.addEventListener("blur", () => {
+                    if (input.value.trim() === "") {
+                        input.value = "NA";
+                    }
+                // Restore original placeholder or clear if it was "NA"
+                if (input.value === "NA") {
+                    input.placeholder = "Loading..."; // Or some default "NA" placeholder
+                } else {
+                    input.removeAttribute("placeholder");
+                }
+                });
+
+                if (numericFields.includes(input.id)) {
+                    input.addEventListener("input", (e) => {
+                        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    });
+                }
+            });
+
+            if (form) {
+                form.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+
+                    const name = document.getElementById("name").value.trim();
+                    const email = document.getElementById("email").value.trim();
+                    const mobile = document.getElementById("mobile").value.trim();
+                    const specialty = document.getElementById("specialty").value;
+                    const is_available = document.getElementById("is_available").value === "true";
+                    const gender = document.getElementById("gender").value.trim();
+                    const aadhaar = document.getElementById("aadhaar").value.trim();
+                    const blood_group = document.getElementById("blood_group").value.trim();
+                    const country = document.getElementById("country").value.trim();
+                    const state = document.getElementById("state").value.trim();
+                    const district = document.getElementById("district").value.trim();
+                    const pincode = document.getElementById("pincode").value.trim();
+
+                    const fieldsToValidate = [
+                        { id: "mobile", label: "Mobile Number" },
+                        { id: "specialty", label: "Medical Specialty" },
+                        { id: "gender", label: "Gender" },
+                        { id: "aadhaar", label: "Aadhaar Number" },
+                        { id: "blood_group", label: "Blood Group" },
+                        { id: "country", label: "Country" },
+                        { id: "state", label: "State" },
+                        { id: "district", label: "District" },
+                        { id: "pincode", label: "Pin Code" }
+                    ];
+
+                    for (const field of fieldsToValidate) {
+                        const val = document.getElementById(field.id).value.trim();
+                        if (val === "" || val === "NA") {
+                            showDoctorModal("Input Required", `Please enter real data for ${field.label}. 'NA' is not allowed.`);
+                            document.getElementById(field.id).focus();
+                            return;
+                        }
+                    }
+
+                    if (!/^[0-9]{10}$/.test(mobile)) {
+                        showDoctorModal("Validation Error", "Mobile number must be exactly 10 numeric digits.");
+                        document.getElementById("mobile").focus();
+                        return;
+                    }
+                    if (!/^[0-9]{12}$/.test(aadhaar)) {
+                        showDoctorModal("Validation Error", "Aadhaar number must be exactly 12 numeric digits.");
+                        document.getElementById("aadhaar").focus();
+                        return;
+                    }
+                    if (!/^[0-9]{6}$/.test(pincode)) {
+                        showDoctorModal("Validation Error", "Pin Code must be exactly 6 numeric digits.");
+                        document.getElementById("pincode").focus();
+                        return;
+                    }
+
+                    const updatedData = {
+                        name,
+                        email,
+                        mobile,
+                        specialty,
+                        is_available,
+                        gender,
+                        aadhaar,
+                        blood_group,
+                        country,
+                        state,
+                        district,
+                        pincode
+                    };
+
+                    try {
+                        const response = await fetch(`${apiUrl}/${docId}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(updatedData)
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            if (data.user && data.user.name) {
+                                localStorage.setItem("userName", data.user.name);
+                            }
+                            showDoctorModal("Success", "Profile Updated Successfully!", () => location.reload());
+                        } else {
+                            showDoctorModal("Update Failed", data.error || "Update failed");
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        showDoctorModal("Network Error", "Could not connect to the profile server.");
+                    }
+                });
+            }
+
+            fetchDoctorProfile();
+        });
+    </script>
 
     <!-- ====== ionicons ======= -->
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>

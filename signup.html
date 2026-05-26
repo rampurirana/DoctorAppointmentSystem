@@ -74,6 +74,18 @@
                                     <option value="Doctor">Doctor</option>
                                 </select>
                             </div>
+
+                            <div class="input_field" id="doctorSpecialtyField" style="display: none;">
+                                <i class="fa-solid fa-stethoscope"></i>
+                                <select id="doctorSpecialty">
+                                    <option value="" disabled selected>Select Doctor Type</option>
+                                    <option value="Cardiologist">Cardiologist</option>
+                                    <option value="Dermatologist">Dermatologist</option>
+                                    <option value="Neurologist">Neurologist</option>
+                                    <option value="Pediatrician">Pediatrician</option>
+                                    <option value="Orthopedist">Orthopedist</option>
+                                </select>
+                            </div>
                             
                             <p><span class="text">Password Suggestions </span><a href="suggestion.html"> Click here!</a></p>
     
@@ -319,6 +331,16 @@
         // API Fetch logic for Signup
         const signupForm = document.getElementById('signupForm');
         if(signupForm) {
+            const roleSelect = document.getElementById('selectrole');
+            const specialtyField = document.getElementById('doctorSpecialtyField');
+            const specialtySelect = document.getElementById('doctorSpecialty');
+            roleSelect.addEventListener('change', () => {
+                const registeringDoctor = roleSelect.value === 'Doctor';
+                specialtyField.style.display = registeringDoctor ? 'flex' : 'none';
+                specialtySelect.required = registeringDoctor;
+                if (!registeringDoctor) specialtySelect.value = '';
+            });
+
             signupForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const name = document.querySelector('input[placeholder="Name"]').value;
@@ -326,6 +348,7 @@
                 const password = document.querySelector('input[placeholder="Password"]').value;
                 const confirmPassword = document.querySelector('input[placeholder="Confirm Password"]').value;
                 const role = document.getElementById('selectrole').value;
+                const specialty = specialtySelect.value;
 
                 if(password !== confirmPassword) {
                     alert("Passwords do not match!");
@@ -345,7 +368,7 @@
                     const response = await fetch(backendUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, email, password, role })
+                        body: JSON.stringify({ name, email, password, role, specialty })
                     });
                     
                     if (!response.ok) {
