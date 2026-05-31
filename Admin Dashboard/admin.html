@@ -7,6 +7,8 @@
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
     <link rel="stylesheet" href="../assets/app-shell.css">
     <script src="../assets/app-shell.js"></script>
+    <!-- Chart.js for Bird's Eye Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="admin.css">
 </head>
 
@@ -17,7 +19,7 @@
             <ul>
                 <li>
                     <a href="#">
-                        <div class="nav_logo"> <strong>Noorie <span>Clinic</strong><span></span></div>
+                        <div class="nav_logo"> <strong>Noorie <span>Clinic</span></strong></div>
                     </a>
                 </li>
 
@@ -31,11 +33,65 @@
                 </li>
 
                 <li>
+                    <a href="allappointments.html" id="navAppointments">
+                        <span class="icon">
+                            <ion-icon name="calendar-outline"></ion-icon>
+                        </span>
+                        <span class="title">Appointments</span>
+                    </a>
+                </li>
+
+                <li>
                     <a href="alluser.html">
                         <span class="icon">
                             <ion-icon name="people-outline"></ion-icon>
                         </span>
                         <span class="title">Users</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="adduser.html">
+                        <span class="icon">
+                            <ion-icon name="person-add-outline"></ion-icon>
+                        </span>
+                        <span class="title">Add Users</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="alldoctors.html">
+                        <span class="icon">
+                            <ion-icon name="medkit-outline"></ion-icon>
+                        </span>
+                        <span class="title">Doctors</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="adddoctor.html">
+                        <span class="icon">
+                            <ion-icon name="add-circle-outline"></ion-icon>
+                        </span>
+                        <span class="title">Add Doctors</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="alladmins.html">
+                        <span class="icon">
+                            <ion-icon name="shield-checkmark-outline"></ion-icon>
+                        </span>
+                        <span class="title">Admins</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="addadmin.html">
+                        <span class="icon">
+                            <ion-icon name="lock-open-outline"></ion-icon>
+                        </span>
+                        <span class="title">Add Admins</span>
                     </a>
                 </li>
 
@@ -49,7 +105,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a href="#" id="logoutBtn">
                         <span class="icon">
                             <ion-icon name="log-out-outline"></ion-icon>
                         </span>
@@ -66,6 +122,11 @@
                     <ion-icon name="menu-outline"></ion-icon>
                 </div>
 
+                <div class="system-status">
+                    <span class="dot online"></span>
+                    <span>System Live</span>
+                </div>
+
                 <div class="search">
                     <label>
                         <input type="text" placeholder="Search here">
@@ -78,12 +139,21 @@
                 </div>
             </div>
 
+            <div class="dashboard-header">
+                <div class="header-title">
+                    <h1>Dashboard Overview</h1>
+                    <p>Welcome back! Here's what's happening at Noorie Clinic today.</p>
+                </div>
+                <div class="header-date" id="liveClock"></div>
+            </div>
+
             <!-- ======================= Cards ================== -->
             <div class="cardBox">
                 <div class="card">
                     <div>
-                        <div class="numbers">0</div>
+                        <div class="numbers" id="totalAppointments">0</div>
                         <div class="cardName">Appointments</div>
+                        <div class="growth positive" id="appointmentsGrowth"><ion-icon name="trending-up-outline"></ion-icon> 12% vs last month</div>
                     </div>
 
                     <div class="iconBx">
@@ -93,8 +163,9 @@
 
                 <div class="card">
                     <div>
-                        <div class="numbers">0</div>
+                        <div class="numbers" id="totalDoctors">0</div>
                         <div class="cardName">Doctors</div>
+                        <div class="growth" id="doctorsGrowth"><ion-icon name="person-outline"></ion-icon> 2 on leave today</div>
                     </div>
 
                     <div class="iconBx">
@@ -104,186 +175,168 @@
 
                 <div class="card">
                     <div>
-                        <div class="numbers">0</div>
+                        <div class="numbers" id="totalCustomers">0</div>
                         <div class="cardName">Customers</div>
+                        <div class="growth positive" id="customersGrowth"><ion-icon name="trending-up-outline"></ion-icon> 5% new</div>
                     </div>
 
                     <div class="iconBx">
                         <ion-icon name="people-outline"></ion-icon>
                     </div>
                 </div>
+
+                <div class="card">
+                    <div>
+                        <div class="numbers" id="totalAdmins">0</div>
+                        <div class="cardName">Admins</div>
+                        <div class="growth" id="adminsGrowth">Active Sessions: 1</div>
+                    </div>
+
+                    <div class="iconBx">
+                        <ion-icon name="shield-checkmark-outline"></ion-icon>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================= Analytics ================== -->
+            <div class="graphBox">
+                <div class="box">
+                    <canvas id="myChart"></canvas>
+                </div>
+                <div class="box">
+                    <canvas id="earning"></canvas>
+                </div>
+            </div>
+
+            <!-- ======================= Quick Actions ================== -->
+            <div class="quickActions">
+                <div class="cardHeader">
+                    <h2>Management Quick Links</h2>
+                </div>
+                <div class="actionBtns">
+                        <a href="allappointments.html" id="appointmentsQuickLink" class="actionBtn"><ion-icon name="calendar-outline"></ion-icon> Appointments List</a>
+                    <a href="adddoctor.html" class="actionBtn"><ion-icon name="add-circle-outline"></ion-icon> Add Doctor</a>
+                    <a href="alldoctors.html" class="actionBtn"><ion-icon name="medkit-outline"></ion-icon> Doctors List</a>
+                    <a href="adduser.html" class="actionBtn"><ion-icon name="person-add-outline"></ion-icon> Add User</a>
+                    <a href="alluser.html" class="actionBtn"><ion-icon name="people-outline"></ion-icon> Users List</a>
+                    <a href="alladmins.html" class="actionBtn"><ion-icon name="shield-checkmark-outline"></ion-icon> Admins List</a>
+                    <a href="password.html" class="actionBtn"><ion-icon name="lock-closed-outline"></ion-icon> Security</a>
+                </div>
             </div>
 
             <!-- ================ Order Details List ================= -->
-            <div class="details">
+            <div class="details" id="appointments-section">
                 <div class="recentOrders">
                     <div class="cardHeader">
                         <h2>Recent Appointments</h2>
-                        <a href="#" class="btn">View All</a>
+                        <div class="table-filter-group">
+                            <button class="filter-tab" data-day="yesterday">Yesterday</button>
+                            <button class="filter-tab active" data-day="today">Today</button>
+                            <button class="filter-tab" data-day="tomorrow">Tomorrow</button>
+                            <input type="date" id="adminApptDate" class="inline-date" title="Filter by custom date">
+                        </div>
+                        <a href="allappointments.html" class="btn" id="viewAllAppointmentsBtn">View All</a>
+                    </div>
+
+                    <div class="appointment-summary-box" id="appointmentSummaryBox">
+                        <div class="info-text">
+                            <h3>Today's Appointments</h3>
+                            <p>Overview of scheduled patient visits for the selected period.</p>
+                        </div>
+                        <span class="appt-count" id="apptCountBadge">0 Total</span>
                     </div>
 
                     <table>
                         <thead>
                             <tr>
-                                <td>Name</td>
+                                <td>User ID</td>
+                                <td>Patient</td>
                                 <td>Date</td>
-                                <td>Time</td>
+                                <td>Doctor ID</td>
+                                <td>Doctor</td>
+                                <td>Appt ID</td>
+                                <td>Slot</td>
                                 <td>Status</td>
+                                <td>Actions</td>
                             </tr>
                         </thead>
 
-                        <tbody>
-                            <tr>
-                                <td>Rampravesh Rana</td>
-                                <td>10/09/2024</td>
-                                <td>01:00 PM</td>
-                                <td><span class="status accept">Accept</span></td>
-                            </tr>
-                            <tr>
-                                <td>Ashish Rana</td>
-                                <td>10/09/2024</td>
-                                <td>12:00 PM</td>
-                                <td><span class="status reject">Reject</span></td>
-                            </tr>
-                            <tr>
-                                <td>Aryan Rana</td>
-                                <td>10/09/2024</td>
-                                <td>11:00 AM</td>
-                                <td><span class="status accept">Accept</span></td>
-                            </tr>
-                            <tr>
-                                <td> Neeraj Pandit</td>
-                                <td>10/09/2024</td>
-                                <td>10:00 AM</td>
-                                <td><span class="status accept">Accept</span></td>
-                            </tr>
-                            <tr>
-                                <td>Subham Singh</td>
-                                <td>09/09/2024</td>
-                                <td>01:00 PM</td>
-                                <td><span class="status pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td>Suraj Rana</td>
-                                <td>09/09/2024</td>
-                                <td>12:00 AM</td>
-                                <td><span class="status pending">Pending</span></td>
-                            </tr>
-                            <tr>
-                                <td>Pankaj Yadav</td>
-                                <td>09/09/2024</td>
-                                <td>11:00 AM</td>
-                                <td><span class="status reject">Reject</span></td>
-                            </tr>
-                            <tr>
-                                <td>Himanshu Rana</td>
-                                <td>09/09/2024</td>
-                                <td>10:00 AM</td>
-                                <td><span class="status accept">Accept</span></td>
-                            </tr>
-                            <tr>
-                                <td>Baleshwar Rana</td>
-                                <td>08/09/2024</td>
-                                <td>01:00 PM</td>
-                                <td><span class="status reject">Reject</span></td>
-                            </tr>
-                            <tr>
-                                <td>Sunil Rana</td>
-                                <td>08/09/2024</td>
-                                <td>12:00 PM</td>
-                                <td><span class="status reject">Reject</span></td>
-                            </tr>
-                            <tr>
-                                <td>Anushka Rana</td>
-                                <td>11/09/2024</td>
-                                <td>11:00 AM</td>
-                                <td><span class="status accept">Accept</span></td>
-                            </tr>
-                            
+                        <tbody id="recentAppointmentsTable">
+                            <!-- Populated dynamically by admin.js -->
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- ================= New Customers ================ -->
-                <div class="recentCustomers">
-                    <div class="cardHeader">
-                        <h2>Recent Customers</h2>
-                    </div>
-
-                    <table>
-                        <tr>
-                            <td width="60px">
-                                <div class="imgBx"><img src="customer02.jpg" alt=""></div>
-                            </td>
-                            <td>
-                                <h4>Rampravesh Rana<br> <span>Jharkhand</span></h4>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td width="60px">
-                                <div class="imgBx"><img src="customer01.jpg" alt=""></div>
-                            </td>
-                            <td>
-                                <h4>Ashish Rana<br> <span>Jharkhand</span></h4>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td width="60px">
-                                <div class="imgBx"><img src="customer02.jpg" alt=""></div>
-                            </td>
-                            <td>
-                                <h4>Aryan Rana<br> <span>Haryana</span></h4>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td width="60px">
-                                <div class="imgBx"><img src="customer01.jpg" alt=""></div>
-                            </td>
-                            <td>
-                                <h4>Neeraj Pandit<br> <span>Delhi</span></h4>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td width="60px">
-                                <div class="imgBx"><img src="customer02.jpg" alt=""></div>
-                            </td>
-                            <td>
-                                <h4>Subham Singh<br> <span>Uttar Pradesh</span></h4>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td width="60px">
-                                <div class="imgBx"><img src="customer01.jpg" alt=""></div>
-                            </td>
-                            <td>
-                                <h4>Suraj Rana<br> <span>Mumbai</span></h4>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td width="60px">
-                                <div class="imgBx"><img src="customer01.jpg" alt=""></div>
-                            </td>
-                            <td>
-                                <h4>Pankaj Yadav<br> <span>Goa</span></h4>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td width="60px">
-                                <div class="imgBx"><img src="customer02.jpg" alt=""></div>
-                            </td>
-                            <td>
-                                <h4>Himanshu Rana<br> <span>Rajsthan</span></h4>
-                            </td>
-                        </tr>
-                    </table>
+    <!-- Edit Appointment Modal -->
+    <div id="editAppointmentModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px; color: var(--primary-color-dark);">Modify Appointment</h3>
+            <form id="editAppointmentForm">
+                <input type="hidden" id="editApptId">
+                
+                <div class="password_input">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <input type="text" id="editPatientName" placeholder="Patient Name" required>
                 </div>
+                
+                <div class="password_input">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    <input type="date" id="editApptDate" required>
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="medkit-outline"></ion-icon>
+                    <select id="editDoctorType" required>
+                        <option value="" disabled selected>Select Doctor Type</option>
+                        <option value="General Physician">General Physician</option>
+                        <option value="Cardiologist">Cardiologist</option>
+                        <option value="Dermatologist">Dermatologist</option>
+                        <option value="Neurologist">Neurologist</option>
+                        <option value="Pediatrician">Pediatrician</option>
+                        <option value="Orthopedist">Orthopedist</option>
+                    </select>
+                </div>
+                <div class="password_input">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <select id="editDoctorId" required></select>
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <input type="text" id="editSlot" placeholder="Slot/Serial (e.g. 01)">
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="stats-chart-outline"></ion-icon>
+                    <select id="editStatus" required>
+                        <option value="Pending">Pending</option>
+                        <option value="Accepted">Accepted</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="button_field" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="submit">Save Changes</button>
+                    <button type="button" id="closeEditModal" style="background: #767268;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Action Status Modal -->
+    <div id="adminActionModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <ion-icon id="modalIcon" name="checkmark-circle-outline" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 15px;"></ion-icon>
+            <h3 id="modalTitle" style="margin-bottom: 10px; color: var(--text-dark);">Success</h3>
+            <p id="modalMessage" style="color: var(--text-light); margin-bottom: 25px;">Operation completed successfully.</p>
+            <div class="button_field" style="display: flex; justify-content: center; gap: 10px;">
+                <button type="button" id="modalCloseBtn">Close</button>
+                <button type="button" id="modalConfirmBtn" style="display: none; background: var(--danger);">Confirm</button>
             </div>
         </div>
     </div>

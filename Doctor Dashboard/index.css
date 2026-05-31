@@ -432,8 +432,22 @@ body {
   border-collapse: collapse;
   margin-top: 10px;
 }
+.details table thead {
+  background: var(--primary-color);
+}
+.details table thead tr {
+  background: var(--primary-color) !important;
+}
 .details table thead td {
   font-weight: 600;
+  color: var(--white) !important;
+  border-bottom: none !important;
+}
+.details table thead tr td:first-child {
+  border-top-left-radius: 10px !important;
+}
+.details table thead tr td:last-child {
+  border-top-right-radius: 10px !important;
 }
 .details .recentOrders table tr {
   color: var(--text-dark);

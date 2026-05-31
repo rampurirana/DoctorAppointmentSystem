@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Appointments</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="stylesheet" href="../assets/app-shell.css">
+    <script src="../assets/app-shell.js"></script>
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="navigation">
+            <ul>
+                <li><a href="#"><div class="nav_logo"><strong>Noorie <span>Clinic</span></strong></div></a></li>
+                <li><a href="admin.html"><span class="icon"><ion-icon name="home-outline"></ion-icon></span><span class="title">Dashboard</span></a></li>
+                <li class="hovered"><a href="allappointments.html"><span class="icon"><ion-icon name="calendar-outline"></ion-icon></span><span class="title">Appointments</span></a></li>
+                <li><a href="alluser.html"><span class="icon"><ion-icon name="people-outline"></ion-icon></span><span class="title">Users</span></a></li>
+                <li><a href="adduser.html"><span class="icon"><ion-icon name="person-add-outline"></ion-icon></span><span class="title">Add Users</span></a></li>
+                <li><a href="alldoctors.html"><span class="icon"><ion-icon name="medkit-outline"></ion-icon></span><span class="title">Doctors</span></a></li>
+                <li><a href="adddoctor.html"><span class="icon"><ion-icon name="add-circle-outline"></ion-icon></span><span class="title">Add Doctors</span></a></li>
+                <li><a href="alladmins.html"><span class="icon"><ion-icon name="shield-checkmark-outline"></ion-icon></span><span class="title">Admins</span></a></li>
+                <li><a href="addadmin.html"><span class="icon"><ion-icon name="lock-open-outline"></ion-icon></span><span class="title">Add Admins</span></a></li>
+                <li><a href="password.html"><span class="icon"><ion-icon name="lock-closed-outline"></ion-icon></span><span class="title">Password</span></a></li>
+                <li><a href="#" id="logoutBtn"><span class="icon"><ion-icon name="log-out-outline"></ion-icon></span><span class="title">Log Out</span></a></li>
+            </ul>
+        </div>
+
+        <div class="main">
+            <div class="topbar">
+                <div class="toggle"><ion-icon name="menu-outline"></ion-icon></div>
+                <div class="search">
+                    <label>
+                        <input type="text" placeholder="Search appointments...">
+                        <ion-icon name="search-outline"></ion-icon>
+                    </label>
+                </div>
+                <div class="user"><img src="customer01.jpg" alt=""></div>
+            </div>
+
+            <div class="details">
+                <div class="recentOrders">
+                    <div class="cardHeader">
+                        <h2>Master Appointment Registry</h2>
+                        <div class="table-filter-group">
+                            <button class="filter-tab" data-day="yesterday">Yesterday</button>
+                            <button class="filter-tab active" data-day="today">Today</button>
+                            <button class="filter-tab" data-day="tomorrow">Tomorrow</button>
+                            <input type="date" id="adminApptDate" class="inline-date" title="Filter by custom date">
+                        </div>
+                    </div>
+
+                    <div class="appointment-summary-box" id="appointmentSummaryBox">
+                        <div class="info-text">
+                            <h3>Full Booking Records</h3>
+                            <p>Manage and monitor every appointment across the system.</p>
+                        </div>
+                        <span class="appt-count" id="apptCountBadge">0 Total</span>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <td style="font-weight: 700;">User ID</td>
+                                <td style="font-weight: 700;">Patient</td>
+                                <td style="font-weight: 700;">Date</td>
+                                <td style="font-weight: 700;">Doctor ID</td>
+                                <td style="font-weight: 700;">Doctor</td>
+                                <td style="font-weight: 700;">Appt ID</td>
+                                <td style="font-weight: 700;">Slot</td>
+                                <td style="font-weight: 700;">Status</td>
+                                <td style="font-weight: 700;">Actions</td>
+                            </tr>
+                        </thead>
+                        <tbody id="allAppointmentsRegistryTable">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Appointment Modal -->
+    <div id="editAppointmentModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px; color: var(--primary-color-dark);">Modify Appointment</h3>
+            <form id="editAppointmentForm">
+                <input type="hidden" id="editApptId">
+                
+                <div class="password_input">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <input type="text" id="editPatientName" placeholder="Patient Name" required>
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    <input type="date" id="editApptDate" required>
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="medkit-outline"></ion-icon>
+                    <select id="editDoctorType" required>
+                        <option value="" disabled selected>Select Doctor Type</option>
+                        <option value="General Physician">General Physician</option>
+                        <option value="Cardiologist">Cardiologist</option>
+                        <option value="Dermatologist">Dermatologist</option>
+                        <option value="Neurologist">Neurologist</option>
+                        <option value="Pediatrician">Pediatrician</option>
+                        <option value="Orthopedist">Orthopedist</option>
+                    </select>
+                </div>
+                <div class="password_input">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <select id="editDoctorId" required></select>
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <input type="text" id="editSlot" placeholder="Slot/Serial (e.g. 01)">
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="stats-chart-outline"></ion-icon>
+                    <select id="editStatus" required>
+                        <option value="Pending">Pending</option>
+                        <option value="Accepted">Accepted</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="button_field" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="submit">Save Changes</button>
+                    <button type="button" id="closeEditModal" style="background: #767268;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Action Status Modal -->
+    <div id="adminActionModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <ion-icon id="modalIcon" name="checkmark-circle-outline" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 15px;"></ion-icon>
+            <h3 id="modalTitle" style="margin-bottom: 10px; color: var(--text-dark);">Success</h3>
+            <p id="modalMessage" style="color: var(--text-light); margin-bottom: 25px;">Operation completed successfully.</p>
+            <div class="button_field" style="display: flex; justify-content: center; gap: 10px;">
+                <button type="button" id="modalCloseBtn">Close</button>
+                <button type="button" id="modalConfirmBtn" style="display: none; background: var(--danger);">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add User</title>
+    <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navigation">
+            <!-- Same navigation as above -->
+            <ul>
+                <li><a href="#"><div class="nav_logo"><strong>Noorie <span>Clinic</span></strong></div></a></li>
+                <li><a href="admin.html"><span class="icon"><ion-icon name="home-outline"></ion-icon></span><span class="title">Dashboard</span></a></li>
+                <li>
+                    <a href="allappointments.html" id="navAppointments">
+                        <span class="icon">
+                            <ion-icon name="calendar-outline"></ion-icon>
+                        </span>
+                        <span class="title">Appointments</span>
+                    </a>
+                </li>
+                <li><a href="alluser.html"><span class="icon"><ion-icon name="people-outline"></ion-icon></span><span class="title">Users</span></a></li>
+                <li><a href="adduser.html"><span class="icon"><ion-icon name="person-add-outline"></ion-icon></span><span class="title">Add Users</span></a></li>
+                <li><a href="alldoctors.html"><span class="icon"><ion-icon name="medkit-outline"></ion-icon></span><span class="title">Doctors</span></a></li>
+                <li><a href="adddoctor.html"><span class="icon"><ion-icon name="add-circle-outline"></ion-icon></span><span class="title">Add Doctors</span></a></li>
+                <li><a href="alladmins.html"><span class="icon"><ion-icon name="shield-checkmark-outline"></ion-icon></span><span class="title">Admins</span></a></li>
+                <li><a href="addadmin.html"><span class="icon"><ion-icon name="lock-open-outline"></ion-icon></span><span class="title">Add Admins</span></a></li>
+                <li><a href="password.html"><span class="icon"><ion-icon name="lock-closed-outline"></ion-icon></span><span class="title">Password</span></a></li>
+                <li><a href="#" id="logoutBtn"><span class="icon"><ion-icon name="log-out-outline"></ion-icon></span><span class="title">Log Out</span></a></li>
+            </ul>
+        </div>
+
+        <div class="main">
+            <div class="topbar">
+                <div class="toggle"><ion-icon name="menu-outline"></ion-icon></div>
+                <div class="user"><img src="customer01.jpg" alt=""></div>
+            </div>
+
+            <div class="dashboard-header">
+                <div class="header-title">
+                    <h1>Add New Patient</h1>
+                    <p>Register a manual patient profile in the system.</p>
+                </div>
+            </div>
+
+            <div class="password_header">
+                <div class="password_main">
+                    <form id="addUserForm">
+                        <div class="password_input">
+                            <ion-icon name="person-outline"></ion-icon>
+                            <input type="text" id="patName" placeholder="Patient Name" required>
+                        </div>
+                        <div class="password_input">
+                            <ion-icon name="mail-outline"></ion-icon>
+                            <input type="email" id="patEmail" placeholder="Email Address" required>
+                        </div>
+                        <div class="password_input">
+                            <ion-icon name="call-outline"></ion-icon>
+                            <input type="tel" id="patMobile" placeholder="Mobile Number" required>
+                        </div>
+                        <div class="password_input">
+                            <ion-icon name="lock-closed-outline"></ion-icon>
+                            <input type="password" id="patPassword" placeholder="Set Password" required>
+                        </div>
+                        <div class="button_field">
+                            <button type="submit">Create Patient Profile</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="admin.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+</body>
+</html>

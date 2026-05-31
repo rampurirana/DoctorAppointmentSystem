@@ -88,20 +88,18 @@
                         <div class="input_group">
                             <div class="input_field">
                                 <i class="fa-solid fa-envelope"></i>
-                                <input type="email" name="" required placeholder="Email">
+                                <input type="email" id="loginEmail" required placeholder="Email">
                             </div>
 
                             <div class="input_field">
                                 <i class="fa-solid fa-lock"></i>
-                                <input type="password" name="" required placeholder="Password">
+                                <input type="password" id="loginPassword" required placeholder="Password">
                             </div>
-
-
 
                             <div class="input_field">
                                 <i class="fa-solid fa-circle-user"></i>
                                 <label for="selectrole"></label>
-                                <select id="selectrole" name="" required anchange="updatePlaceholder">
+                                <select id="selectrole" required onchange="updatePlaceholder">
                                     <option value="" disabled selected>Select Role</option>
                                     <option value="User">User</option>
                                     <option value="Doctor">Doctor</option>
@@ -307,7 +305,60 @@
             </div>
         </div>
     </footer> <!--end footer container-->
+
+    <!-- Action Confirmation Modal -->
+    <div id="loginActionModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Notification</h3>
+            <p id="modalMessage"></p>
+            <div class="modal-footer">
+                <button class="btn-confirm" id="modalConfirmBtn">OK</button>
+                <button class="btn-close" id="modalCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        /**
+         * Show Login Modal with Optional Callback
+         * Replaces all alert() calls with a confirmation modal
+         */
+        function showLoginModal(title, message, onConfirm = null) {
+            const modal = document.getElementById("loginActionModal");
+            const modalTitle = document.getElementById("modalTitle");
+            const modalMessage = document.getElementById("modalMessage");
+            const confirmBtn = document.getElementById("modalConfirmBtn");
+            const closeBtn = document.getElementById("modalCloseBtn");
+
+            modalTitle.textContent = title;
+            // Convert newline characters to <br> for better display
+            modalMessage.innerHTML = message.replace(/\n/g, '<br>');
+            
+            // Show modal
+            modal.style.display = "flex";
+
+            // Handle confirm button
+            const handleConfirm = () => {
+                modal.style.display = "none";
+                if (onConfirm) onConfirm();
+            };
+
+            confirmBtn.onclick = handleConfirm;
+            confirmBtn.textContent = onConfirm ? "Continue" : "OK";
+
+            // Handle close button
+            closeBtn.onclick = () => {
+                modal.style.display = "none";
+            };
+
+            // Close modal when clicking outside
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = "none";
+                }
+            };
+        }
+
         const menuBtn = document.getElementById('menu-btn');
         const navLinks = document.getElementById('nav-links');
         menuBtn.addEventListener('click', () => {
@@ -355,17 +406,23 @@
         if(loginForm) {
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const email = document.querySelector('input[placeholder="Email"]').value;
-                const password = document.querySelector('input[placeholder="Password"]').value;
-                const selectedRole = document.getElementById('selectrole').value;
-                
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                const selectedRole = document.getElementById('selectrole').value.trim();
+
+                if (!selectedRole) {
+                    showLoginModal('Validation Error', 'Please select a role before logging in.');
+                    return;
+                }
+
+                const normalizedRole = selectedRole.toLowerCase();
                 try {
                     // Replace with your actual Render URL later
                     const backendUrl = 'http://localhost:10000/api/login';
                     const response = await fetch(backendUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password, role: selectedRole })
+                        body: JSON.stringify({ email, password, role: normalizedRole })
                     });
 
                     if (!response.ok) {
@@ -386,9 +443,13 @@
                     }
 
                     const data = await response.json();
+                    if (!data.user || !data.user.id) {
+                        showLoginModal("Login Failed", "Unexpected login response from the server. Please try again.");
+                        return;
+                    }
 
-                    if ((data.user.role || "").toLowerCase() !== selectedRole.toLowerCase()) {
-                        showLoginModal("Role Mismatch", `This account is registered as ${data.user.role}, not ${selectedRole}.`);
+                    if ((data.user.role || "").toLowerCase() !== normalizedRole) {
+                        showLoginModal("Role Mismatch", `This account is registered as ${data.user.role || 'Unknown'}, not ${selectedRole}.`);
                         return;
                     }
                     
@@ -396,15 +457,15 @@
                     localStorage.clear();
                     localStorage.setItem("userId", data.user.id);
                     localStorage.setItem("userName", data.user.name);
-                    localStorage.setItem("userRole", data.user.role);
+                    localStorage.setItem("userRole", normalizedRole);
                     
                     // Redirect with cache buster to force fresh data load
-                    if (data.user.role.toLowerCase() === "doctor") {
-                        window.location.href = "Doctor Dashboard/doctor.html?t=" + Date.now();
-                    } else if (data.user.role.toLowerCase() === "admin") {
-                        window.location.href = "Admin Dashboard/admin.html?t=" + Date.now();
+                    if (normalizedRole === "doctor") {
+                        window.location.href = encodeURI("Doctor Dashboard/doctor.html?t=" + Date.now());
+                    } else if (normalizedRole === "admin") {
+                        window.location.href = encodeURI("Admin Dashboard/admin.html?t=" + Date.now());
                     } else {
-                        window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
+                        window.location.href = encodeURI("User Dashboard/dashboard.html?t=" + Date.now());
                     }
                 } catch (err) {
                     console.error(err);

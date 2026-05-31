@@ -3,9 +3,13 @@
 -- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Add user_id column to users table (format: USR + Year + Auto Increment)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS user_id VARCHAR(50) UNIQUE;
+
 -- Create the users table with full profile details
 CREATE TABLE IF NOT EXISTS users (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id VARCHAR(50) UNIQUE,  -- Format: USR + Year + Auto Increment (e.g., USR202400001)
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -30,6 +34,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS doctors (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID UNIQUE REFERENCES users(id) ON DELETE SET NULL, -- legacy link only
+    doc_id VARCHAR(50) UNIQUE, -- Format: DOC + Department Code + Unique Number
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -51,8 +56,45 @@ CREATE TABLE IF NOT EXISTS doctors (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Auto-generate doctor IDs in the required DOC + Department Code + Unique Number format
+CREATE SEQUENCE IF NOT EXISTS doctor_unique_number_seq START 1;
+
+CREATE OR REPLACE FUNCTION doctor_department_code(specialty TEXT) RETURNS TEXT AS $$
+BEGIN
+    CASE lower(trim(coalesce(specialty, 'General Physician')))
+        WHEN 'cardiologist' THEN RETURN 'CAR';
+        WHEN 'neurosurgeon' THEN RETURN 'NEU';
+        WHEN 'dermatologist' THEN RETURN 'DER';
+        WHEN 'pediatrics' THEN RETURN 'PED';
+        WHEN 'general physician' THEN RETURN 'GEN';
+        ELSE RETURN upper(substring(regexp_replace(specialty, '[^A-Za-z]', '', 'g') FROM 1 FOR 3));
+    END CASE;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION doctors_generate_doc_id() RETURNS trigger AS $$
+BEGIN
+    IF NEW.doc_id IS NULL OR NEW.doc_id = '' THEN
+        NEW.doc_id := 'DOC' || doctor_department_code(NEW.specialty)
+                      || lpad(nextval('doctor_unique_number_seq')::text, 5, '0');
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS doctors_doc_id_trigger ON doctors;
+CREATE TRIGGER doctors_doc_id_trigger
+BEFORE INSERT ON doctors
+FOR EACH ROW EXECUTE FUNCTION doctors_generate_doc_id();
+
+-- Backfill doc_id for existing doctors if missing
+UPDATE doctors
+SET doc_id = 'DOC' || doctor_department_code(specialty) || lpad(nextval('doctor_unique_number_seq')::text, 5, '0')
+WHERE doc_id IS NULL;
+
 -- Upgrade databases that used doctors only as a profile table.
 ALTER TABLE doctors ALTER COLUMN user_id DROP NOT NULL;
+ALTER TABLE doctors ADD COLUMN IF NOT EXISTS doc_id VARCHAR(50) UNIQUE;
 ALTER TABLE doctors ADD COLUMN IF NOT EXISTS email VARCHAR(255);
 ALTER TABLE doctors ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
 ALTER TABLE doctors ADD COLUMN IF NOT EXISTS role VARCHAR(50) NOT NULL DEFAULT 'Doctor';
@@ -95,6 +137,35 @@ SET name = EXCLUDED.name,
     state = EXCLUDED.state,
     district = EXCLUDED.district,
     pincode = EXCLUDED.pincode;
+
+-- Create the admins table to store administrative staff separately
+CREATE TABLE IF NOT EXISTS admins (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'Admin',
+    registration_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_login_date TIMESTAMP WITH TIME ZONE,
+    name_updated BOOLEAN DEFAULT FALSE NOT NULL,
+    email_updated BOOLEAN DEFAULT FALSE NOT NULL,
+    mobile VARCHAR(20),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Copy existing admin records from the users table into the new admins table
+INSERT INTO admins (
+    name, email, password_hash, role, registration_date, last_login_date,
+    name_updated, email_updated, mobile
+)
+SELECT
+    name, email, password_hash, 'Admin', registration_date, last_login_date,
+    name_updated, email_updated, mobile
+FROM users
+WHERE LOWER(role) = 'admin'
+ON CONFLICT (email) DO UPDATE
+SET name = EXCLUDED.name,
+    password_hash = EXCLUDED.password_hash;
 
 -- Create the appointments table
 CREATE TABLE IF NOT EXISTS appointments (
@@ -201,12 +272,14 @@ ALTER TABLE notifications ADD COLUMN IF NOT EXISTS doctor_id UUID REFERENCES doc
 -- Disable Row Level Security (RLS) to allow backend API access
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE doctors DISABLE ROW LEVEL SECURITY;
+ALTER TABLE admins DISABLE ROW LEVEL SECURITY;
 ALTER TABLE appointments DISABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
 
 -- Create indexes for faster lookups
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_doctors_email ON doctors(email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_email ON admins(email);
 CREATE INDEX IF NOT EXISTS idx_doctors_specialty ON doctors(specialty);
 CREATE INDEX IF NOT EXISTS idx_appointments_user_id ON appointments(user_id);
 CREATE INDEX IF NOT EXISTS idx_appointments_doctor_id ON appointments(doctor_id);
@@ -219,3 +292,15 @@ ON appointments(doctor_id, appointment_date, booking_slot)
 WHERE status IN ('Accepted', 'Completed') AND booking_slot IS NOT NULL AND doctor_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_doctor_id ON notifications(doctor_id);
+
+-- ==========================================
+-- DEMO DATA FOR ADMINISTRATORS
+-- ==========================================
+-- Default password for all demo accounts below is: admin@123
+
+INSERT INTO admins (name, email, password_hash, role, mobile)
+VALUES
+('Super Administrator', 'admin@noorieclinic.com', '$2a$10$7Rz3I/vK9R.J6I.Z292iOeC7vV.vI8tmvE56aR5X4/VpXhTbe4GgJ', 'Admin', '9988776655'),
+('Clinic Operations Manager', 'manager@noorieclinic.com', '$2a$10$7Rz3I/vK9R.J6I.Z292iOeC7vV.vI8tmvE56aR5X4/VpXhTbe4GgJ', 'Admin', '9988776644'),
+('Technical Support Lead', 'support@noorieclinic.com', '$2a$10$7Rz3I/vK9R.J6I.Z292iOeC7vV.vI8tmvE56aR5X4/VpXhTbe4GgJ', 'Admin', '9988776633')
+ON CONFLICT (email) DO NOTHING;

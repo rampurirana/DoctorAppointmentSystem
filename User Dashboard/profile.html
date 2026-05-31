@@ -212,6 +212,12 @@
                         <form id="profileForm">
                             <div class="form_grid">
                                 <div class="form_row">
+                                    <label for="user_id">User ID</label>
+                                    <input type="text" id="user_id" placeholder="Loading user ID..." readonly>
+                                    <span class="lock-hint"><ion-icon name="lock-closed-outline"></ion-icon> Unique ID (Non-editable)</span>
+                                </div>
+
+                                <div class="form_row">
                                     <label for="name">Name</label>
                                     <input type="text" id="name" placeholder="Loading name...">
                                 </div>
@@ -437,6 +443,7 @@
         async function fetchProfile() {
             if (userId === "mock_user") {
                 const defaultProfile = {
+                    user_id: "USR202400001",
                     name: "Demo Patient",
                     mobile: "",
                     email: "demopatient@gmail.com",
@@ -467,6 +474,11 @@
             // Store original values to check for changes later
             originalName = user.name || "";
             originalEmail = user.email || "";
+
+            // Populate User ID (always read-only)
+            if (user.user_id) {
+                document.getElementById("user_id").value = user.user_id;
+            }
 
             // Populate values
             document.getElementById("name").value = originalName;

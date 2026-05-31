@@ -14,6 +14,28 @@ const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 const defaultDoctorSpecialty = 'General Physician';
 
+/**
+ * Generate custom user ID in format: USR + Year + Auto Increment
+ * Example: USR202400001, USR202400002, etc.
+ */
+async function generateCustomUserId() {
+    const currentYear = new Date().getFullYear();
+    const prefix = `USR${currentYear}`;
+    
+    // Count existing user_ids for the current year
+    const { data, error } = await supabase
+        .from('users')
+        .select('user_id', { count: 'exact' })
+        .ilike('user_id', `${prefix}%`);
+    
+    if (error) throw error;
+    
+    const count = (data?.length || 0) + 1;
+    const customId = `${prefix}${String(count).padStart(5, '0')}`;
+    
+    return customId;
+}
+
 async function getDoctorById(doctorId) {
     const { data, error } = await supabase
         .from('doctors')
@@ -24,6 +46,7 @@ async function getDoctorById(doctorId) {
     if (error) throw error;
     return data;
 }
+
 
 // --- 1. SIGNUP ROUTE ---
 app.post('/api/signup', async (req, res) => {
@@ -36,15 +59,26 @@ app.post('/api/signup', async (req, res) => {
     try {
         // Hash the password before storing it
         const hashedPassword = await bcrypt.hash(password, 10);
-        const isDoctor = role.toLowerCase() === 'doctor';
+        const lowerRole = role.toLowerCase();
+        const isDoctor = lowerRole === 'doctor';
+        const isAdmin = lowerRole === 'admin';
 
-        const accountTable = isDoctor ? 'doctors' : 'users';
+        let accountTable = 'users';
+        if (isDoctor) accountTable = 'doctors';
+        else if (isAdmin) accountTable = 'admins';
+
         const accountDetails = {
             name,
             email,
             password_hash: hashedPassword,
             role
         };
+        
+        // Generate custom user_id only for regular users
+        if (lowerRole === 'user') {
+            accountDetails.user_id = await generateCustomUserId();
+        }
+        
         if (isDoctor) {
             accountDetails.specialty = String(specialty || defaultDoctorSpecialty).trim() || defaultDoctorSpecialty;
         }
@@ -54,7 +88,7 @@ app.post('/api/signup', async (req, res) => {
             .insert([
                 accountDetails
             ])
-            .select('id, name, email, role');
+            .select('id, name, email, role, user_id');
 
         if (error) throw error;
         
@@ -66,8 +100,8 @@ app.post('/api/signup', async (req, res) => {
                 .update({ doctor_id: registeredUser.id })
                 .is('doctor_id', null)
                 .eq('doctor_name', registeredUser.name);
-        } else {
-            // Notifications are linked to patient/admin accounts in users.
+        } else if (lowerRole === 'user') {
+            // Notifications are linked to patient accounts in the users table.
             await supabase
                 .from('notifications')
                 .insert([{
@@ -91,8 +125,15 @@ app.post('/api/login', async (req, res) => {
     }
 
     try {
-        const loginAsDoctor = String(role || '').toLowerCase() === 'doctor';
-        const accountTable = loginAsDoctor ? 'doctors' : 'users';
+        const lowerRole = String(role || '').toLowerCase();
+        let accountTable = 'users';
+        
+        if (lowerRole === 'doctor') {
+            accountTable = 'doctors';
+        } else if (lowerRole === 'admin') {
+            accountTable = 'admins';
+        }
+
         const { data: accounts, error } = await supabase
             .from(accountTable)
             .select('*')
@@ -128,7 +169,7 @@ app.get('/api/user/:id', async (req, res) => {
     try {
         const { data: user, error } = await supabase
             .from('users')
-            .select('id, name, email, role, mobile, gender, aadhaar, blood_group, country, state, district, pincode, name_updated, email_updated')
+            .select('id, user_id, name, email, role, mobile, gender, aadhaar, blood_group, country, state, district, pincode, registration_date, last_login_date, name_updated, email_updated')
             .eq('id', id)
             .single();
 
@@ -245,7 +286,7 @@ app.get('/api/doctor/profile/:id', async (req, res) => {
     try {
         const { data: doctor, error } = await supabase
             .from('doctors')
-            .select('id, name, email, role, specialty, is_available, mobile, gender, aadhaar, blood_group, country, state, district, pincode, name_updated, email_updated')
+            .select('id, doc_id, name, email, role, specialty, is_available, mobile, gender, aadhaar, blood_group, country, state, district, pincode, name_updated, email_updated')
             .eq('id', id)
             .single();
 
@@ -304,7 +345,7 @@ app.put('/api/doctor/profile/:id', async (req, res) => {
                 email_updated: existingDoctor.email_updated || emailChanged
             })
             .eq('id', id)
-            .select();
+            .select('id, doc_id, name, email, role, specialty, is_available, mobile, gender, aadhaar, blood_group, country, state, district, pincode, name_updated, email_updated');
 
         if (error) throw error;
         res.status(200).json({ message: 'Doctor profile updated successfully', user: data[0] });
@@ -340,6 +381,56 @@ app.put('/api/doctor/:id/password', async (req, res) => {
     }
 });
 
+// --- 5d. FETCH ADMIN PROFILE ROUTE ---
+app.get('/api/admin/profile/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data: admin, error } = await supabase
+            .from('admins')
+            .select('id, name, email, role, mobile, registration_date, last_login_date')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        res.status(200).json(admin);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 5e. CHANGE ADMIN PASSWORD ROUTE ---
+app.put('/api/admin/:id/password', async (req, res) => {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    try {
+        const { data: admin, error: fetchErr } = await supabase
+            .from('admins')
+            .select('password_hash')
+            .eq('id', id)
+            .single();
+
+        if (fetchErr) throw fetchErr;
+
+        const isMatch = await bcrypt.compare(currentPassword, admin.password_hash);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Incorrect current password' });
+        }
+
+        const newHashedPassword = await bcrypt.hash(newPassword, 10);
+        const { error: updateErr } = await supabase
+            .from('admins')
+            .update({ password_hash: newHashedPassword })
+            .eq('id', id);
+
+        if (updateErr) throw updateErr;
+
+        res.status(200).json({ message: 'Admin password changed successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- 6. LIST AVAILABLE DOCTORS ROUTE ---
 app.get('/api/doctors', async (req, res) => {
     const specialty = String(req.query.specialty || '').trim();
@@ -347,7 +438,7 @@ app.get('/api/doctors', async (req, res) => {
     try {
         let query = supabase
             .from('doctors')
-            .select('id, name, specialty, is_available')
+            .select('id, name, specialty, is_available, email, state, district')
             .order('specialty', { ascending: true })
             .order('name', { ascending: true });
 
@@ -474,6 +565,22 @@ app.get('/api/user/:id/appointments', async (req, res) => {
             .eq('user_id', id)
             .order('appointment_date', { ascending: false });
 
+        if (error) throw error;
+        res.status(200).json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 8a. FETCH SINGLE APPOINTMENT ROUTE ---
+app.get('/api/appointments/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data, error } = await supabase
+            .from('appointments')
+            .select('*, users(user_id), doctors(doc_id)')
+            .eq('id', id)
+            .single();
         if (error) throw error;
         res.status(200).json(data);
     } catch (err) {
@@ -874,6 +981,221 @@ app.delete('/api/doctors/:id/notifications', async (req, res) => {
 
         if (error) throw error;
         res.status(200).json({ message: 'All notifications cleared successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 16. ADMIN UPDATE APPOINTMENT ROUTE ---
+app.put('/api/admin/appointments/:id', async (req, res) => {
+    const { id } = req.params;
+    const { patient_name, appointment_date, doctor_id, booking_slot, status } = req.body;
+
+    try {
+        // Fetch doctor details to update doctor_name and doctor_type as snapshots
+        const { data: doctor, error: docError } = await supabase
+            .from('doctors')
+            .select('name, specialty')
+            .eq('id', doctor_id)
+            .single();
+
+        if (docError) throw docError;
+
+        const { data, error } = await supabase
+            .from('appointments')
+            .update({
+                patient_name,
+                appointment_date,
+                doctor_id,
+                doctor_name: doctor.name,
+                doctor_type: doctor.specialty,
+                booking_slot,
+                status
+            })
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        res.status(200).json({ message: 'Appointment updated successfully', appointment: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 17. ADMIN DELETE APPOINTMENT ROUTE ---
+app.delete('/api/admin/appointments/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase.from('appointments').delete().eq('id', id);
+        if (error) throw error;
+        res.status(200).json({ message: 'Appointment deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 18. ADMIN USER MANAGEMENT ROUTES ---
+
+// Fetch all patients for the registry
+app.get('/api/admin/users', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .select('id, user_id, name, email, mobile, country, state, district, pincode, registration_date')
+            .ilike('role', 'user')
+            .order('registration_date', { ascending: false });
+
+        if (error) throw error;
+        res.status(200).json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin update user profile
+app.put('/api/admin/users/:id', async (req, res) => {
+    const { id } = req.params;
+    const updateData = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .update(updateData)
+            .eq('id', id)
+            .select();
+        if (error) throw error;
+        res.status(200).json({ message: 'User updated successfully', user: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin delete user account
+app.delete('/api/admin/users/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase.from('users').delete().eq('id', id);
+        if (error) throw error;
+        res.status(200).json({ message: 'User account deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 15. ADMIN DASHBOARD STATS ---
+app.get('/api/admin/dashboard-stats', async (req, res) => {
+    const { date, filterType } = req.query;
+    try {
+        const calcGrowth = (current, previous) => {
+            const change = current - previous;
+            const percent = previous === 0 ? (current === 0 ? 0 : 100) : Math.round((change / previous) * 100);
+            return { change, percent };
+        };
+
+        let appointmentsCount = 0;
+        let appointmentsGrowth = { change: 0, percent: 0 };
+
+        if (filterType === 'date' && date) {
+            const prevDate = new Date(date);
+            prevDate.setDate(prevDate.getDate() - 1);
+            const prevDateString = prevDate.toISOString().slice(0, 10);
+
+            const { count } = await supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('appointment_date', date);
+            const { count: prevCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('appointment_date', prevDateString);
+            appointmentsCount = count || 0;
+            appointmentsGrowth = calcGrowth(appointmentsCount, prevCount || 0);
+        } else {
+            const { count } = await supabase.from('appointments').select('*', { count: 'exact', head: true });
+            appointmentsCount = count || 0;
+
+            const today = new Date();
+            const currentPeriodStart = new Date(today);
+            currentPeriodStart.setDate(today.getDate() - 30);
+            const previousPeriodStart = new Date(currentPeriodStart);
+            previousPeriodStart.setDate(currentPeriodStart.getDate() - 30);
+
+            const { count: currentPeriodCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true }).gte('created_at', currentPeriodStart.toISOString());
+            const { count: previousPeriodCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true }).gte('created_at', previousPeriodStart.toISOString()).lt('created_at', currentPeriodStart.toISOString());
+            appointmentsGrowth = calcGrowth(currentPeriodCount || 0, previousPeriodCount || 0);
+        }
+        
+        const { count: doctorsCount } = await supabase.from('doctors').select('*', { count: 'exact', head: true });
+        const { count: customersCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
+        const { count: adminsCount } = await supabase.from('admins').select('*', { count: 'exact', head: true });
+
+        const now = new Date();
+        const recentStart = new Date(now);
+        recentStart.setDate(now.getDate() - 30);
+        const previousStart = new Date(recentStart);
+        previousStart.setDate(recentStart.getDate() - 30);
+
+        const { count: currentDoctorsCount } = await supabase.from('doctors').select('*', { count: 'exact', head: true }).gte('registration_date', recentStart.toISOString());
+        const { count: previousDoctorsCount } = await supabase.from('doctors').select('*', { count: 'exact', head: true }).gte('registration_date', previousStart.toISOString()).lt('registration_date', recentStart.toISOString());
+
+        const { count: currentCustomersCount } = await supabase.from('users').select('*', { count: 'exact', head: true }).ilike('role', 'user').gte('registration_date', recentStart.toISOString());
+        const { count: previousCustomersCount } = await supabase.from('users').select('*', { count: 'exact', head: true }).ilike('role', 'user').gte('registration_date', previousStart.toISOString()).lt('registration_date', recentStart.toISOString());
+
+        const { count: currentAdminsCount } = await supabase.from('admins').select('*', { count: 'exact', head: true }).gte('registration_date', recentStart.toISOString());
+        const { count: previousAdminsCount } = await supabase.from('admins').select('*', { count: 'exact', head: true }).gte('registration_date', previousStart.toISOString()).lt('registration_date', recentStart.toISOString());
+
+        res.status(200).json({
+            appointments: appointmentsCount || 0,
+            doctors: doctorsCount || 0,
+            customers: customersCount || 0,
+            admins: adminsCount || 0,
+            growth: {
+                appointments: appointmentsGrowth,
+                doctors: calcGrowth(currentDoctorsCount || 0, previousDoctorsCount || 0),
+                customers: calcGrowth(currentCustomersCount || 0, previousCustomersCount || 0),
+                admins: calcGrowth(currentAdminsCount || 0, previousAdminsCount || 0)
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/admin/recent-activity', async (req, res) => {
+    const { date, filterType } = req.query;
+    try {
+        // Modified to join users and doctors to get custom unique IDs (user_id and doc_id)
+        let apptQuery = supabase
+            .from('appointments')
+            .select('*, users(user_id), doctors(doc_id)')
+            .order('created_at', { ascending: false });
+        
+        if (filterType === 'all') {
+            // No date filter, no limit
+        } else if (date) {
+            apptQuery = apptQuery.eq('appointment_date', date).order('created_at', { ascending: false });
+        } else {
+            apptQuery = apptQuery.limit(10); // Default to recent 10
+        } 
+
+        const { data: appointments } = await apptQuery;
+
+        const { data: customers } = await supabase
+            .from('users')
+            .select('id, user_id, name, email, country, district, state')
+            .ilike('role', 'user')
+            .order('registration_date', { ascending: false })
+            .limit(8);
+
+        res.status(200).json({ appointments: appointments || [], customers: customers || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 6a. LIST ALL ADMINS ---
+app.get('/api/admins', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('admins')
+            .select('id, name, email, registration_date')
+            .order('registration_date', { ascending: false });
+
+        if (error) throw error;
+        res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -61,8 +61,7 @@ async function loadWelcomeName() {
     welcomeText.style.fontSize = "1.1rem";
     welcomeText.style.fontWeight = "600";
 
-    const formatDrName = (name) => /^dr/i.test(name) ? name : `Dr. ${name}`;
-    welcomeText.innerText = `Welcome, ${formatDrName(cachedName)}!`;
+    welcomeText.innerText = `Welcome, ${cachedName}!`;
     
     // Insert before search bar
     searchBar.parentElement.insertBefore(welcomeText, searchBar);
@@ -73,7 +72,7 @@ async function loadWelcomeName() {
         if (response.ok) {
             const user = await response.json();
             if (user.name && user.name !== cachedName) {
-                welcomeText.innerText = `Welcome, ${formatDrName(user.name)}!`;
+                welcomeText.innerText = `Welcome, ${user.name}!`;
                 localStorage.setItem("userName", user.name); // Update local cache
             }
         }
@@ -386,10 +385,26 @@ function renderDoctorAppointments() {
         if (activeTab === 'rejected') return status === 'rejected' || status === 'reject';
         
         return true;
-    });
+    }).slice(0, 20);
+
+    // Update Summary Box UI if present
+    const summaryBox = document.getElementById("appointmentSummaryBox");
+    if (summaryBox) {
+        const dateTitle = summaryBox.querySelector("h3");
+        const countBadge = document.getElementById("apptCountBadge");
+        
+        let displayTitle = "Appointments Overview";
+        if (activeTab === 'pending') displayTitle = "New Patient Requests";
+        else if (activeTab === 'upcoming') displayTitle = "Your Upcoming Schedule";
+        else if (activeTab === 'past') displayTitle = "Completed & Past Visits";
+        else if (activeTab === 'cancelled') displayTitle = "Cancelled Appointments";
+        
+        if (dateTitle) dateTitle.textContent = displayTitle;
+        if (countBadge) countBadge.textContent = `${appointments.length} Total`;
+    }
 
     if (appointments.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 30px;">No ${activeTab} appointments found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px;">No ${activeTab} appointments found.</td></tr>`;
         return;
     }
 
@@ -403,9 +418,10 @@ function renderDoctorAppointments() {
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
+            <td><span class="slot-number" style="font-size: 0.75rem; opacity: 0.8;">${appointment.user_id ? appointment.user_id.slice(0, 8) : 'N/A'}</span></td>
             <td>${appointment.patient_name || "N/A"}</td>
             <td>${new Date(appointment.appointment_date).toLocaleDateString()}</td>
-            <td>${appointment.appointment_id || "N/A"}</td>
+            <td><div class="table-date" style="font-size: 0.85rem;">${appointment.appointment_id || "N/A"}</div></td>
             <td>${appointment.booking_slot || "Not assigned"}</td>
             <td><span class="status ${statusClass(appointment.status)}">${appointment.status}</span></td>
             <td>
