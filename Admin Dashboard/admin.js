@@ -12,12 +12,27 @@ window.addEventListener("pageshow", function (event) {
 
 const currentPage = decodeURIComponent(window.location.pathname).split("/").pop()?.toLowerCase();
 const navLinks = document.querySelectorAll(".navigation li a");
-const backendUrl = window.APP_BACKEND_URL;
+const backendUrl = (window.APP_BACKEND_URL || "https://doctor-backend-yrry.onrender.com");
 let appointmentsLineChart = null;
 let statusDoughnutChart = null;
 const apptDateFilter = document.getElementById("adminApptDate");
 let allDoctorsForEdit = [];
 let pendingModalAction = null;
+
+async function readApiError(response, fallback) {
+    try {
+        const payload = await response.json();
+        return payload.error || payload.message || fallback;
+    } catch (e) {
+        return fallback;
+    }
+}
+
+function setTableMessage(tbody, colspan, message) {
+    if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center; padding: 20px;">${message}</td></tr>`;
+    }
+}
 
 const stateDistrictMap = {
     "Andhra Pradesh": ["Anantapur", "Chittoor", "East Godavari", "Guntur", "Krishna", "Kurnool", "Nellore", "Prakasam", "Srikakulam", "Visakhapatnam", "Vizianagaram", "West Godavari", "YSR Kadapa"],
@@ -241,7 +256,15 @@ async function updateDashboardStats(filterType = 'recent', date = null) {
         } // else default to 'recent' (no params needed for default)
         if (params.toString()) url += `?${params.toString()}`;
         const response = await fetch(url);
-        if (!response.ok) return;
+        if (!response.ok) {
+            const message = await readApiError(response, 'Unable to load dashboard stats.');
+            console.error("Dashboard stats error:", message);
+            ["totalAppointments", "totalDoctors", "totalCustomers", "totalAdmins"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = "0";
+            });
+            return;
+        }
         const stats = await response.json();
         
         if (document.getElementById("totalAppointments")) document.getElementById("totalAppointments").textContent = stats.appointments;
@@ -338,7 +361,11 @@ async function loadRecentActivity(filterType = 'recent', date = null, updateChar
         } // else default to 'recent' (no params needed for default)
         if (params.toString()) url += `?${params.toString()}`;
         const response = await fetch(url);
-        if (!response.ok) return;
+        if (!response.ok) {
+            const message = await readApiError(response, 'Unable to load recent activity.');
+            setTableMessage(document.getElementById("recentAppointmentsTable"), 9, message);
+            return;
+        }
         const { appointments, customers } = await response.json();
         
         // Populate Appointments
@@ -401,6 +428,7 @@ async function loadRecentActivity(filterType = 'recent', date = null, updateChar
         if (updateCharts) updateAnalyticsCharts(appointments);
     } catch (err) {
         console.error("Recent activity error:", err);
+        setTableMessage(document.getElementById("recentAppointmentsTable"), 9, "Unable to connect to recent activity service.");
     }
 }
 
@@ -414,6 +442,11 @@ async function loadAllAppointmentsRegistry(filterType = 'all', date = null) {
     try {
         const url = date ? `${backendUrl}/api/admin/recent-activity?filterType=date&date=${date}` : `${backendUrl}/api/admin/recent-activity?filterType=all`;
         const response = await fetch(url);
+        if (!response.ok) {
+            const message = await readApiError(response, 'Unable to load appointments.');
+            setTableMessage(tbody, 9, message);
+            return;
+        }
         const { appointments } = await response.json();
 
         tbody.innerHTML = appointments.length ? appointments.map(appt => {
@@ -437,7 +470,10 @@ async function loadAllAppointmentsRegistry(filterType = 'all', date = null) {
 
         const countBadge = document.getElementById("apptCountBadge");
         if (countBadge) countBadge.textContent = `${appointments.length} Total`;
-    } catch (err) { console.error("Registry load error:", err); }
+    } catch (err) {
+        console.error("Registry load error:", err);
+        setTableMessage(tbody, 9, "Unable to connect to appointments service.");
+    }
 }
 
 /**
@@ -449,6 +485,11 @@ async function loadDoctorsRegistry() {
 
     try {
         const response = await fetch(`${backendUrl}/api/doctors`);
+        if (!response.ok) {
+            const message = await readApiError(response, 'Unable to load doctors.');
+            setTableMessage(tbody, 8, message);
+            return;
+        }
         const doctors = await response.json();
 
         tbody.innerHTML = doctors.length ? doctors.map(doc => `
@@ -469,6 +510,7 @@ async function loadDoctorsRegistry() {
         `).join('') : '<tr><td colspan="8" style="text-align:center">No doctors registered</td></tr>';
     } catch (err) {
         console.error("Registry load error:", err);
+        setTableMessage(tbody, 8, "Unable to connect to doctors service.");
     }
 }
 
@@ -483,6 +525,11 @@ async function loadAdminsRegistry() {
 
     try {
         const response = await fetch(`${backendUrl}/api/admins`);
+        if (!response.ok) {
+            const message = await readApiError(response, 'Unable to load admins.');
+            setTableMessage(tbody, 6, message);
+            return;
+        }
         const admins = await response.json();
 
         tbody.innerHTML = admins.length ? admins.map(admin => {
@@ -512,6 +559,7 @@ async function loadAdminsRegistry() {
         `}).join('') : '<tr><td colspan="6" style="text-align:center">No admins registered</td></tr>';
     } catch (err) {
         console.error("Admins registry load error:", err);
+        setTableMessage(tbody, 6, "Unable to connect to admins service.");
     }
 }
 

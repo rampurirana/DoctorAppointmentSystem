@@ -263,7 +263,7 @@
             window.location.replace("../index.html");
         }
 
-        const backendUrl = window.APP_BACKEND_URL;
+        const backendUrl = (window.APP_BACKEND_URL || "https://doctor-backend-yrry.onrender.com");
         const MAX_VISIBLE = 10;
         let allNotifications = [];
         let showAll = false;
@@ -287,9 +287,23 @@
                     allNotifications = await res.json();
                     displayNotifications();
                     markNotificationsAsRead();
+                } else {
+                    let message = "Unable to load notifications.";
+                    try {
+                        const errorData = await res.json();
+                        message = errorData.error || message;
+                    } catch (e) {}
+                    const container = document.querySelector(".notification_set");
+                    if (container) {
+                        container.innerHTML = `<div class="notification" style="text-align: center; padding: 20px;"><p>${message}</p></div>`;
+                    }
                 }
             } catch (err) {
                 console.error(err);
+                const container = document.querySelector(".notification_set");
+                if (container) {
+                    container.innerHTML = `<div class="notification" style="text-align: center; padding: 20px;"><p>Could not connect to the notification server.</p></div>`;
+                }
             }
         }
 

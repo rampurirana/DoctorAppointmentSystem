@@ -12,7 +12,7 @@ window.addEventListener("pageshow", function (event) {
 
 const currentPage = window.location.pathname.split("/").pop();
 const navLinks = document.querySelectorAll(".navigation li a");
-const backendUrl = window.APP_BACKEND_URL;
+const backendUrl = (window.APP_BACKEND_URL || "https://doctor-backend-yrry.onrender.com");
 const doctorId = localStorage.getItem("userId");
 
 /**

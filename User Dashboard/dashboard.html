@@ -518,7 +518,7 @@
         }
 
         const isMockMode = userId === "mock_user";
-        const backendUrl = window.APP_BACKEND_URL;
+        const backendUrl = (window.APP_BACKEND_URL || "https://doctor-backend-yrry.onrender.com");
 
         // Fetch dashboard statistics
         function updateStats() {
@@ -635,6 +635,17 @@
                     allAppointmentsData = await res.json();
                     console.log("Verified Backend Data:", allAppointmentsData);
                     filterAndRender();
+                } else {
+                    let message = "Failed to fetch live appointments from server.";
+                    try {
+                        const errorData = await res.json();
+                        message = errorData.error || message;
+                    } catch (e) {}
+                    const tbody = document.querySelector('.details table tbody');
+                    if (tbody) {
+                        tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="padding: 20px; color: var(--secondary-color);">${message}</td></tr>`;
+                    }
+                    renderStats({ success: 0, pending: 0, reject: 0 });
                 }
             } catch (err) {
                 console.error(err);

@@ -543,7 +543,17 @@
                 setupNameEmailFields(data);
             } catch (err) {
                 console.error('Failed to fetch doctor profile:', err);
-                showDoctorModal("Error", "Error loading profile. Please ensure the backend server is running.");
+                document.getElementById("doc_id").value = "Unavailable";
+                document.getElementById("name").value = "";
+                document.getElementById("email").value = "";
+                document.getElementById("mobile").value = "NA";
+                document.getElementById("aadhaar").value = "NA";
+                document.getElementById("country").value = "INDIA";
+                document.getElementById("pincode").value = "NA";
+                ["doc_id", "name", "email", "mobile", "aadhaar", "pincode"].forEach(id => {
+                    document.getElementById(id)?.removeAttribute("placeholder");
+                });
+                showDoctorModal("Error", "Error loading profile data from the server.");
             }
         }
 

@@ -414,7 +414,7 @@
                 
                 try {
                     // Replace with your actual Render URL later
-                    const backendUrl = `${window.APP_BACKEND_URL}/api/signup`;
+                    const backendUrl = `${(window.APP_BACKEND_URL || "https://doctor-backend-yrry.onrender.com")}/api/signup`;
                     const response = await fetch(backendUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

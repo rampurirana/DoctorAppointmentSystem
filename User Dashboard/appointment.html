@@ -271,7 +271,7 @@
             };
         }
 
-        const backendUrl = window.APP_BACKEND_URL;
+        const backendUrl = (window.APP_BACKEND_URL || "https://doctor-backend-yrry.onrender.com");
         let availableDoctors = [];
 
         function populateDoctorOptions() {

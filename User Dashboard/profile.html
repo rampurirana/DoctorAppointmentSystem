@@ -355,7 +355,7 @@
             window.location.replace("../index.html");
         }
 
-        const backendUrl = window.APP_BACKEND_URL;
+        const backendUrl = (window.APP_BACKEND_URL || "https://doctor-backend-yrry.onrender.com");
 
         // To track if Name or Email are actually changed during submission
         let originalName = "";
@@ -464,9 +464,35 @@
                 if (response.ok) {
                     const user = await response.json();
                     populateProfile(user);
+                } else {
+                    let message = "Unable to load profile data.";
+                    try {
+                        const errorData = await response.json();
+                        message = errorData.error || message;
+                    } catch (e) {}
+                    showUserModal("Profile Error", message);
+                    populateProfile({
+                        user_id: "Unavailable",
+                        name: "",
+                        email: "",
+                        mobile: "NA",
+                        aadhaar: "NA",
+                        country: "INDIA",
+                        pincode: "NA"
+                    });
                 }
             } catch (err) {
                 console.error(err);
+                showUserModal("Network Error", "Could not load profile data from the server.");
+                populateProfile({
+                    user_id: "Unavailable",
+                    name: "",
+                    email: "",
+                    mobile: "NA",
+                    aadhaar: "NA",
+                    country: "INDIA",
+                    pincode: "NA"
+                });
             }
         }
 
@@ -497,6 +523,9 @@
             document.getElementById("aadhaar").value = user.aadhaar || "NA";
             document.getElementById("country").value = user.country || "INDIA";
             document.getElementById("pincode").value = user.pincode || "NA";
+            ["user_id", "name", "email", "mobile", "aadhaar", "pincode"].forEach(id => {
+                document.getElementById(id)?.removeAttribute("placeholder");
+            });
 
             // Always setup fields to show hints, lock them only if already updated
             setupNameEmailFields(user);
