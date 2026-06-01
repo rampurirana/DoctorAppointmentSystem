@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Doctor</title>
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="stylesheet" href="../assets/app-shell.css">
+    <script src="../assets/app-shell.js"></script>
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -27,6 +29,14 @@
                 <li><a href="adddoctor.html"><span class="icon"><ion-icon name="add-circle-outline"></ion-icon></span><span class="title">Add Doctors</span></a></li>
                 <li><a href="alladmins.html"><span class="icon"><ion-icon name="shield-checkmark-outline"></ion-icon></span><span class="title">Admins</span></a></li>
                 <li><a href="addadmin.html"><span class="icon"><ion-icon name="lock-open-outline"></ion-icon></span><span class="title">Add Admins</span></a></li>
+                <li>
+                    <a href="change-password.html">
+                        <span class="icon">
+                            <ion-icon name="key-outline"></ion-icon>
+                        </span>
+                        <span class="title">Change Account Password</span>
+                    </a>
+                </li>
                 <li><a href="password.html"><span class="icon"><ion-icon name="lock-closed-outline"></ion-icon></span><span class="title">Password</span></a></li>
                 <li><a href="#" id="logoutBtn"><span class="icon"><ion-icon name="log-out-outline"></ion-icon></span><span class="title">Log Out</span></a></li>
             </ul>
@@ -35,6 +45,13 @@
         <div class="main">
             <div class="topbar">
                 <div class="toggle"><ion-icon name="menu-outline"></ion-icon></div>
+                <div class="search">
+                    <label>
+                        <input type="text" placeholder="Search ID or Email...">
+                        <ion-icon name="search-outline"></ion-icon>
+                    </label>
+                    <div id="searchDropdown" class="search-dropdown"></div>
+                </div>
                 <div class="user"><img src="customer01.jpg" alt=""></div>
             </div>
 
@@ -47,6 +64,8 @@
 
             <div class="password_header">
                 <div class="password_main">
+                    <h1 class="title">Register New Doctor</h1>
+                    <div class="underline"></div>
                     <form id="addDoctorForm">
                         <div class="password_input">
                             <ion-icon name="person-outline"></ion-icon>
@@ -72,15 +91,30 @@
                             <ion-icon name="lock-closed-outline"></ion-icon>
                             <input type="password" id="docPassword" placeholder="Temporary Password" required>
                         </div>
-                        <div class="button_field">
-                            <button type="submit">Create Account</button>
+                        <div class="button_field" style="margin-top: 10px;">
+                            <button type="submit" style="width: 100%;">Create Professional Account</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Action Status Modal -->
+    <div id="adminActionModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <ion-icon id="modalIcon" name="checkmark-circle-outline" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 15px;"></ion-icon>
+            <h3 id="modalTitle" style="margin-bottom: 10px; color: var(--text-dark);">Success</h3>
+            <p id="modalMessage" style="color: var(--text-light); margin-bottom: 25px;">Operation completed successfully.</p>
+            <div class="button_field" style="display: flex; justify-content: center; gap: 10px;">
+                <button type="button" id="modalCloseBtn">Close</button>
+                <button type="button" id="modalConfirmBtn" style="display: none; background: var(--danger);">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <script src="admin.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>
 </html>

@@ -127,6 +127,69 @@
         }
         .btn-confirm { background: var(--primary-color); color: white; }
         .btn-close { background: #f0f0f0; color: #555; }
+
+        /* Global Search Dropdown */
+        .search {
+            position: relative;
+        }
+        .search-dropdown {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            width: 100%;
+            background: var(--white);
+            border: 1px solid var(--border-color, #e2e8f0);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 2000;
+            max-height: 450px;
+            overflow-y: auto;
+            animation: dropdownFade 0.2s ease-out;
+        }
+        @keyframes dropdownFade {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .search-dropdown.active {
+            display: block;
+        }
+        .search-result-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-item:hover { background: var(--primary-color-light); }
+        .search-result-item h4 {
+            font-size: 0.95rem;
+            color: var(--primary-color-dark);
+            margin-bottom: 4px;
+            margin-top: 0;
+        }
+        .search-result-item p {
+            font-size: 0.8rem;
+            color: var(--text-light, #767268);
+            margin-bottom: 5px;
+        }
+        .search-result-item .type-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            padding: 3px 10px;
+            border-radius: 4px;
+            background: var(--primary-color);
+            color: var(--white);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .search-no-results {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-light, #767268);
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 
@@ -197,9 +260,10 @@
 
                 <div class="search">
                     <label>
-                        <input type="text" placeholder="Search here">
+                        <input type="text" placeholder="Search ID or Email...">
                         <ion-icon name="search-outline"></ion-icon>
                     </label>
+                    <div id="searchDropdown" class="search-dropdown"></div>
                 </div>
 
                 <div class="user">

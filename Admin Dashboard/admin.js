@@ -4,12 +4,13 @@ window.addEventListener("pageshow", function (event) {
     const userRole = (localStorage.getItem("userRole") || "").toLowerCase();
     
     if (!userId || userRole !== "admin") {
+        document.documentElement.classList.add("app-loading");
         localStorage.clear();
         window.location.replace("../index.html");
     }
 });
 
-const currentPage = window.location.pathname.split("/").pop()?.toLowerCase();
+const currentPage = decodeURIComponent(window.location.pathname).split("/").pop()?.toLowerCase();
 const navLinks = document.querySelectorAll(".navigation li a");
 const backendUrl = "http://localhost:10000";
 let appointmentsLineChart = null;
@@ -90,6 +91,37 @@ function populateDistrictOptions(stateValue, selectedDistrict = "") {
             manualInput.style.display = "none";
             manualInput.value = "";
         }
+    }
+}
+
+function populateDocDistrictOptions(stateValue, selectedDistrict = "") {
+    const districtSelect = document.getElementById("editDocDistrict");
+    const manualInput = document.getElementById("editDocDistrictManual");
+    if (!districtSelect) return;
+
+    const districts = stateDistrictMap[stateValue] || [];
+    districtSelect.innerHTML = "<option value=''>Select district</option>";
+
+    let foundSelected = false;
+    districts.forEach(district => {
+        const isSelected = district === selectedDistrict ? 'selected' : '';
+        if (district === selectedDistrict) foundSelected = true;
+        districtSelect.innerHTML += `<option value="${district}" ${isSelected}>${district}</option>`;
+    });
+
+    if (selectedDistrict && !foundSelected && selectedDistrict !== "") {
+        districtSelect.innerHTML += `<option value="${selectedDistrict}" selected>${selectedDistrict}</option>`;
+        foundSelected = true;
+    }
+    districtSelect.innerHTML += `<option value="__other__" ${selectedDistrict === '__other__' ? 'selected' : ''}>Other / Not listed</option>`;
+
+    if (manualInput) {
+        if (selectedDistrict && !foundSelected) {
+            manualInput.value = selectedDistrict;
+            manualInput.style.display = "block";
+            districtSelect.value = "__other__";
+        } else if (districtSelect.value === "__other__") { manualInput.style.display = "block"; }
+        else { manualInput.style.display = "none"; manualInput.value = ""; }
     }
 }
 
@@ -328,9 +360,8 @@ async function loadRecentActivity(filterType = 'recent', date = null, updateChar
                     <td style="font-weight: 600;"><span class="slot-number">${appt.booking_slot || '--'}</span></td>
                     <td><span class="status ${statusText.toLowerCase().replace(/\s+/g, '')}">${statusText}</span></td>
                     <td>
-                        <div class="table-actions">
+                        <div class="table-actions" style="justify-content: center;">
                             <button class="action-icon edit" title="Edit Appointment" onclick="window.openEditModal('${appt.id}')"><ion-icon name="create-outline"></ion-icon></button>
-                            <button class="action-icon delete" title="Remove" onclick="window.deleteAppointment('${appt.id}')"><ion-icon name="trash-outline"></ion-icon></button>
                         </div>
                     </td>
                 </tr>
@@ -397,9 +428,8 @@ async function loadAllAppointmentsRegistry(filterType = 'all', date = null) {
                 <td style="font-weight: 600;"><span class="slot-number">${appt.booking_slot || '--'}</span></td>
                 <td><span class="status ${appt.status.toLowerCase().replace(/\s+/g, '')}">${appt.status}</span></td>
                 <td>
-                    <div class="table-actions">
+                    <div class="table-actions" style="justify-content: center;">
                         <button class="action-icon edit" title="Edit Appointment" onclick="window.openEditModal('${appt.id}')"><ion-icon name="create-outline"></ion-icon></button>
-                        <button class="action-icon delete" onclick="window.deleteAppointment('${appt.id}')"><ion-icon name="trash-outline"></ion-icon></button>
                     </div>
                 </td>
             </tr>
@@ -423,15 +453,20 @@ async function loadDoctorsRegistry() {
 
         tbody.innerHTML = doctors.length ? doctors.map(doc => `
             <tr>
-                <td><span class="slot-number" style="font-size: 0.75rem; opacity: 0.8;">${(doc.id || '').slice(0, 8)}</span></td>
-                <td>${doc.name}</td>
-                <td>${doc.specialty}</td>
-                <td>${doc.email || 'N/A'}</td>
-                <td>${doc.state || 'N/A'}</td>
-                <td>${doc.district || 'N/A'}</td>
-                <td><span class="status ${doc.is_available ? 'accept' : 'reject'}">${doc.is_available ? 'Available' : 'Busy'}</span></td>
+                <td style="font-weight: 600;"><span class="slot-number" style="font-size: 0.85rem; font-weight: 600;">${doc.doc_id || 'N/A'}</span></td>
+                <td style="font-weight: 600;">${doc.name}</td>
+                <td style="font-weight: 600;">${doc.specialty}</td>
+                <td style="font-weight: 600;">${doc.email || 'N/A'}</td>
+                <td style="font-weight: 600;">${doc.state || 'N/A'}</td>
+                <td style="font-weight: 600;">${doc.district || 'N/A'}</td>
+                <td><span class="status ${doc.is_suspended ? 'reject' : (doc.is_available ? 'accept' : 'reject')}" style="font-weight: 600;">${doc.is_suspended ? 'Suspended' : (doc.is_available ? 'Available' : 'Busy')}</span></td>
+                <td>
+                    <div class="table-actions" style="justify-content: center;">
+                        <button class="action-icon edit" title="Edit Doctor Profile" onclick="window.openEditDoctorModal('${doc.id}')"><ion-icon name="create-outline"></ion-icon></button>
+                    </div>
+                </td>
             </tr>
-        `).join('') : '<tr><td colspan="7" style="text-align:center">No doctors registered</td></tr>';
+        `).join('') : '<tr><td colspan="8" style="text-align:center">No doctors registered</td></tr>';
     } catch (err) {
         console.error("Registry load error:", err);
     }
@@ -442,21 +477,39 @@ async function loadDoctorsRegistry() {
  */
 async function loadAdminsRegistry() {
     const tbody = document.getElementById("adminsRegistryTable");
+    const currentAdminId = localStorage.getItem("userId");
+    const SUPER_ADMIN_EMAIL = "admin@noorieclinic.com";
     if (!tbody) return;
 
     try {
         const response = await fetch(`${backendUrl}/api/admins`);
         const admins = await response.json();
 
-        tbody.innerHTML = admins.length ? admins.map(admin => `
+        tbody.innerHTML = admins.length ? admins.map(admin => {
+            const isSelf = admin.id === currentAdminId;
+            const isSuperAdmin = admin.email === SUPER_ADMIN_EMAIL;
+            
+            return `
             <tr>
-                <td><span class="slot-number" style="font-size: 0.75rem; opacity: 0.8;">${(admin.id || '').slice(0, 8)}</span></td>
-                <td>${admin.name}</td>
-                <td>${admin.email || 'N/A'}</td>
-                <td><div class="table-date">${admin.registration_date ? new Date(admin.registration_date).toLocaleDateString() : 'N/A'}</div></td>
-                <td><span class="status accept">Active</span></td>
+                <td style="font-weight: 600;"><span class="slot-number" style="font-size: 0.85rem; font-weight: 600;">${admin.user_id || 'N/A'}</span></td>
+                <td style="font-weight: 600;">${admin.name} 
+                    ${isSelf ? '<small style="color: var(--primary-color); font-style: italic;">(You)</small>' : ''}
+                    ${isSuperAdmin ? '<ion-icon name="ribbon-outline" style="color: #d4af37; vertical-align: middle; margin-left: 5px;" title="Super Admin"></ion-icon>' : ''}
+                </td>
+                <td style="font-weight: 600;">${admin.email || 'N/A'}</td>
+                <td style="font-weight: 600;"><div class="table-date">${admin.registration_date ? new Date(admin.registration_date).toLocaleDateString() : 'N/A'}</div></td>
+                <td style="font-weight: 600;"><span class="status ${admin.is_suspended ? 'reject' : 'accept'}">${admin.is_suspended ? 'Suspended' : 'Active'}</span></td>
+                <td>
+                    <div class="table-actions" style="justify-content: center;">
+                        ${(isSelf || isSuperAdmin) ? `
+                            <button class="action-icon" title="${isSuperAdmin ? 'Super Admin account is locked' : 'Cannot modify self'}" style="cursor: not-allowed; opacity: 0.5;"><ion-icon name="lock-closed-outline"></ion-icon></button>
+                        ` : `
+                            <button class="action-icon edit" title="Edit Admin" onclick="window.openEditAdminModal('${admin.id}')"><ion-icon name="create-outline"></ion-icon></button>
+                        `}
+                    </div>
+                </td>
             </tr>
-        `).join('') : '<tr><td colspan="5" style="text-align:center">No admins registered</td></tr>';
+        `}).join('') : '<tr><td colspan="6" style="text-align:center">No admins registered</td></tr>';
     } catch (err) {
         console.error("Admins registry load error:", err);
     }
@@ -469,7 +522,7 @@ async function loadAllUsersPageData() {
     const tbody = document.getElementById("allUsersRegistryTable");
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">Loading patients...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center">Loading patients...</td></tr>';
 
     try {
         const response = await fetch(`${backendUrl}/api/admin/users`);
@@ -478,7 +531,7 @@ async function loadAllUsersPageData() {
 
         if (!response.ok) {
             const errorMessage = payload?.error || payload?.message || 'Unable to load patient registry.';
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">${errorMessage}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center">${errorMessage}</td></tr>`;
             return;
         }
 
@@ -491,19 +544,99 @@ async function loadAllUsersPageData() {
                 <td style="font-weight: 600;">${cust.country || 'N/A'}</td>
                 <td style="font-weight: 600;">${cust.state || 'N/A'}</td>
                 <td style="font-weight: 600;">${cust.district || 'N/A'}</td>
+                <td style="font-weight: 600;"><span class="status ${cust.is_suspended ? 'reject' : 'accept'}">${cust.is_suspended ? 'Suspended' : 'Active'}</span></td>
                 <td>
-                    <div class="table-actions">
+                    <div class="table-actions" style="justify-content: center;">
                         <button class="action-icon edit" title="Edit Profile" onclick="window.openEditUserModal('${cust.id}')"><ion-icon name="create-outline"></ion-icon></button>
-                        <button class="action-icon delete" title="Delete User" onclick="window.deleteUser('${cust.id}')"><ion-icon name="trash-outline"></ion-icon></button>
                     </div>
                 </td>
             </tr>
-        `).join('') : '<tr><td colspan="8" style="text-align:center">No patients found.</td></tr>';
+        `).join('') : '<tr><td colspan="9" style="text-align:center">No patients found.</td></tr>';
     } catch (err) {
         console.error("Error loading users page:", err);
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">Unable to load patients. Check backend connection.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center">Unable to load patients. Check backend connection.</td></tr>`;
     }
 }
+
+window.openEditAdminModal = async function(adminId) {
+    const modal = document.getElementById("editAdminModal");
+    if (!modal) return;
+
+    const SUPER_ADMIN_EMAIL = "admin@noorieclinic.com";
+    const currentAdminId = localStorage.getItem("userId");
+    
+    if (adminId === currentAdminId) {
+        return showAdminModal("Safety Lock", "You cannot edit your own account from the registry. Please use the Password tab for security changes.", "warning");
+    }
+
+    try {
+        const response = await fetch(`${backendUrl}/api/admin/profile/${adminId}`);
+        const admin = await response.json();
+
+        if (admin.email === SUPER_ADMIN_EMAIL) {
+            return showAdminModal("Access Denied", "The Super Administrator account cannot be modified by other administrators.", "error");
+        }
+
+        document.getElementById("editAdminIdHidden").value = admin.id;
+        document.getElementById("editAdminIdDisplay").value = admin.user_id || "";
+        document.getElementById("editAdminName").value = admin.name || "";
+        document.getElementById("editAdminEmail").value = admin.email || "";
+        document.getElementById("editAdminMobile").value = admin.mobile || "";
+
+        const suspendBtn = document.getElementById("suspendAdminBtn");
+        const deleteBtn = document.getElementById("deleteAdminBtn");
+        
+        if (suspendBtn) {
+            suspendBtn.innerHTML = admin.is_suspended ? '<ion-icon name="shield-checkmark-outline"></ion-icon> Activate Admin' : '<ion-icon name="ban-outline"></ion-icon> Suspend Admin';
+            suspendBtn.style.background = admin.is_suspended ? "var(--primary-color)" : "#e67e22";
+            suspendBtn.onclick = () => window.toggleAdminSuspension(admin.id, admin.is_suspended);
+        }
+        if (deleteBtn) deleteBtn.onclick = () => window.deleteAdmin(admin.id);
+
+        modal.style.display = "flex";
+    } catch (err) { console.error("Admin edit load error:", err); }
+};
+
+window.toggleAdminSuspension = async function(id, currentStatus) {
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? "suspend this admin? They will lose access immediately." : "reactivate this administrator account?";
+    
+    showAdminModal("Security Check", `Are you sure you want to ${actionText}`, "warning", async () => {
+        try {
+            const res = await fetch(`${backendUrl}/api/admin/admins/${id}/suspend`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_suspended: newStatus })
+            });
+            if (res.ok) {
+                showAdminModal("Success", `Admin access has been ${newStatus ? 'suspended' : 'activated'}.`);
+                loadAdminsRegistry();
+                document.getElementById("editAdminModal").style.display = "none";
+            }
+        } catch (err) { console.error("Suspension error:", err); }
+    });
+};
+
+window.deleteAdmin = async function(id) {
+    const currentAdminId = localStorage.getItem("userId");
+    if (id === currentAdminId) {
+        return showAdminModal("Safety Lock", "You cannot delete your own account while logged in.", "error");
+    }
+
+    showAdminModal("Confirm Deletion", "This will permanently remove administrative privileges for this user. Proceed?", "warning", async () => {
+        try {
+            const res = await fetch(`${backendUrl}/api/admin/admins/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showAdminModal("Deleted", "Administrator account has been removed.");
+                loadAdminsRegistry();
+                document.getElementById("editAdminModal").style.display = "none";
+            } else {
+                const result = await res.json();
+                showAdminModal("Error", result.error || "Failed to remove admin.", "error");
+            }
+        } catch (err) { console.error("Delete error:", err); }
+    });
+};
 
 /**
  * Edit and Delete User Logic
@@ -538,6 +671,15 @@ window.openEditUserModal = async function(userId) {
         document.getElementById("editUserRegistrationDate").value = user.registration_date ? new Date(user.registration_date).toLocaleString() : "";
         document.getElementById("editUserLastLogin").value = user.last_login_date ? new Date(user.last_login_date).toLocaleString() : "";
 
+        const suspendBtn = document.getElementById("suspendUserBtn");
+        const deleteBtn = document.getElementById("deleteUserBtn");
+        if (suspendBtn) {
+            suspendBtn.innerHTML = user.is_suspended ? '<ion-icon name="shield-checkmark-outline"></ion-icon> Activate Account' : '<ion-icon name="ban-outline"></ion-icon> Suspend Account';
+            suspendBtn.style.background = user.is_suspended ? "var(--primary-color)" : "#e67e22";
+            suspendBtn.onclick = () => window.toggleUserSuspension(user.id, user.is_suspended);
+        }
+        if (deleteBtn) deleteBtn.onclick = () => window.deleteUser(user.id);
+
         if (appointmentsResponse.ok && Array.isArray(appointments)) {
             appointmentsTable.innerHTML = appointments.length ? appointments.map(appt => `
                 <tr>
@@ -547,9 +689,8 @@ window.openEditUserModal = async function(userId) {
                     <td>${appt.booking_slot || 'N/A'}</td>
                     <td>${appt.status || 'N/A'}</td>
                     <td>
-                        <div class="table-actions">
+                        <div class="table-actions" style="justify-content: center;">
                             <button class="action-icon edit" title="Modify" onclick="window.openEditModal('${appt.id}')"><ion-icon name="create-outline"></ion-icon></button>
-                            <button class="action-icon delete" title="Delete" onclick="window.deleteAppointment('${appt.id}')"><ion-icon name="trash-outline"></ion-icon></button>
                         </div>
                     </td>
                 </tr>
@@ -567,6 +708,141 @@ window.openEditUserModal = async function(userId) {
     }
 };
 
+window.toggleUserSuspension = async function(id, currentStatus) {
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? "suspend this user? They will be unable to log in." : "reactivate this user account?";
+    
+    showAdminModal("Account Access", `Are you sure you want to ${actionText}`, "warning", async () => {
+        try {
+            const res = await fetch(`${backendUrl}/api/admin/users/${id}/suspend`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_suspended: newStatus })
+            });
+            if (res.ok) {
+                showAdminModal("Success", `User account has been ${newStatus ? 'suspended' : 'activated'}.`);
+                loadAllUsersPageData();
+                const userModal = document.getElementById("editUserModal");
+                if (userModal) userModal.style.display = "none";
+            }
+        } catch (err) { console.error("Suspension error:", err); }
+    });
+};
+
+window.openEditDoctorModal = async function(docId) {
+    const modal = document.getElementById("editDoctorModal");
+    const appointmentsTable = document.getElementById("editDocAppointmentsTable");
+    if (!modal) return;
+
+    try {
+        const [docRes, apptRes] = await Promise.all([
+            fetch(`${backendUrl}/api/doctor/profile/${docId}`),
+            fetch(`${backendUrl}/api/doctor/appointments?doctorId=${encodeURIComponent(docId)}`)
+        ]);
+
+        const doc = await docRes.json();
+        const appointments = await apptRes.json();
+
+        document.getElementById("editDocIdHidden").value = doc.id;
+        document.getElementById("editDocDocId").value = doc.doc_id || "";
+        document.getElementById("editDocName").value = doc.name || "";
+        document.getElementById("editDocEmail").value = doc.email || "";
+        document.getElementById("editDocMobile").value = doc.mobile || "";
+        document.getElementById("editDocPincode").value = doc.pincode || "";
+        document.getElementById("editDocAadhaar").value = doc.aadhaar || "";
+        ensureSelectValue("editDocSpecialty", doc.specialty || "");
+        ensureSelectValue("editDocIsAvailable", (doc.is_suspended ? false : doc.is_available) ? "true" : "false");
+        ensureSelectValue("editDocState", doc.state || "");
+        populateDocDistrictOptions(doc.state || "", doc.district || "");
+        ensureSelectValue("editDocGender", doc.gender || "");
+        ensureSelectValue("editDocBloodGroup", doc.blood_group || "");
+
+        const suspendBtn = document.getElementById("suspendDocBtn");
+        const deleteBtn = document.getElementById("deleteDocBtn");
+        if (suspendBtn) {
+            suspendBtn.innerHTML = doc.is_suspended ? '<ion-icon name="shield-checkmark-outline"></ion-icon> Activate Account' : '<ion-icon name="ban-outline"></ion-icon> Suspend Account';
+            suspendBtn.style.background = doc.is_suspended ? "var(--primary-color)" : "#e67e22";
+            suspendBtn.onclick = () => window.toggleDoctorSuspension(doc.id, doc.is_suspended);
+        }
+        if (deleteBtn) deleteBtn.onclick = () => window.deleteDoctor(doc.id);
+
+        // Calculate Stats
+        const stats = appointments.reduce((acc, curr) => {
+            const s = (curr.status || "").toLowerCase().trim();
+            if (s === "completed") acc.completed++;
+            else if (s === "rejected" || s === "reject") acc.rejected++;
+            else if (s === "not completed") acc.incomplete++;
+            else if (s === "pending") acc.pending++;
+            else if (s === "accepted" || s === "accept") acc.accepted++;
+            return acc;
+        }, { completed: 0, rejected: 0, incomplete: 0, pending: 0, accepted: 0 });
+
+        document.getElementById("docStatCompleted").innerText = stats.completed;
+        document.getElementById("docStatRejected").innerText = stats.rejected;
+        document.getElementById("docStatIncomplete").innerText = stats.incomplete;
+        document.getElementById("docStatPending").innerText = stats.pending;
+        document.getElementById("docStatAccepted").innerText = stats.accepted;
+
+        // Populate History Table
+        if (apptRes.ok && Array.isArray(appointments)) {
+            appointmentsTable.innerHTML = appointments.length ? appointments.map(appt => `
+                <tr>
+                    <td style="font-weight: 600;">${appt.appointment_id || 'N/A'}</td>
+                    <td style="font-weight: 600;">${new Date(appt.appointment_date).toLocaleDateString()}</td>
+                    <td style="font-weight: 600;">${appt.patient_name || 'N/A'}</td>
+                    <td><span class="slot-number">${appt.booking_slot || '--'}</span></td>
+                    <td><span class="status ${appt.status.toLowerCase().replace(/\s+/g, '')}">${appt.status}</span></td>
+                    <td>
+                        <div class="table-actions" style="justify-content: center;">
+                            <button class="action-icon edit" title="Modify" onclick="window.openEditModal('${appt.id}')"><ion-icon name="create-outline"></ion-icon></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('') : '<tr><td colspan="6" class="history-empty">No clinical records found for this doctor.</td></tr>';
+        } else {
+            appointmentsTable.innerHTML = '<tr><td colspan="6" class="history-empty">Unable to load history.</td></tr>';
+        }
+
+        modal.style.display = "flex";
+    } catch (err) { console.error("Doctor edit load error:", err); }
+};
+
+window.toggleDoctorSuspension = async function(id, currentStatus) {
+    const newStatus = !currentStatus;
+    const actionText = newStatus ? "suspend this doctor? Access will be revoked." : "reactivate this doctor profile?";
+    
+    showAdminModal("Account Access", `Are you sure you want to ${actionText}`, "warning", async () => {
+        try {
+            const res = await fetch(`${backendUrl}/api/admin/doctors/${id}/suspend`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_suspended: newStatus })
+            });
+            if (res.ok) {
+                showAdminModal("Success", `Doctor account has been ${newStatus ? 'suspended' : 'activated'}.`);
+                loadDoctorsRegistry();
+                document.getElementById("editDoctorModal").style.display = "none";
+            }
+        } catch (err) { console.error("Suspension error:", err); }
+    });
+};
+
+window.deleteDoctor = async function(id) {
+    showAdminModal("Confirm Deletion", "This will permanently remove the doctor profile and their clinical records. Proceed?", "warning", async () => {
+        try {
+            const res = await fetch(`${backendUrl}/api/admin/doctors/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showAdminModal("Deleted", "Doctor profile has been removed.");
+                loadDoctorsRegistry();
+                document.getElementById("editDoctorModal").style.display = "none";
+            } else {
+                const result = await res.json();
+                showAdminModal("Error", result.error || "Failed to delete profile.", "error");
+            }
+        } catch (err) { console.error("Delete error:", err); }
+    });
+};
+
 window.deleteUser = async function(id) {
     showAdminModal("Confirm Deletion", "This will permanently remove the patient account and their history. Proceed?", "warning", async () => {
         try {
@@ -574,6 +850,8 @@ window.deleteUser = async function(id) {
             if (res.ok) {
                 showAdminModal("Deleted", "Patient account has been removed.");
                 loadAllUsersPageData();
+                const userModal = document.getElementById("editUserModal");
+                if (userModal) userModal.style.display = "none";
             } else {
                 const result = await res.json();
                 showAdminModal("Error", result.error || "Failed to delete user.", "error");
@@ -662,7 +940,7 @@ window.quickStatusUpdate = async function(id, newStatus) {
                     patient_name: appt.patient_name,
                     appointment_date: appt.appointment_date,
                     doctor_id: appt.doctor_id,
-                    booking_slot: appt.booking_slot,
+                    booking_slot: newStatus === 'Pending' ? null : appt.booking_slot,
                     status: newStatus
                 })
             });
@@ -679,8 +957,8 @@ window.quickStatusUpdate = async function(id, newStatus) {
 function highlightActiveTab() {
     let matched = false;
     navLinks.forEach((link) => {
-        const linkHref = link.getAttribute("href");
-        if (linkHref && currentPage && currentPage.includes(linkHref)) {
+        const linkHref = link.getAttribute("href")?.toLowerCase();
+        if (linkHref && currentPage === linkHref) {
             link.parentElement.classList.add("hovered");
             matched = true;
         } else {
@@ -688,8 +966,8 @@ function highlightActiveTab() {
         }
     });
 
-    // Default fallback to Dashboard if on admin.html or root
-    if (!matched || currentPage === "admin.html" || currentPage === "") {
+    // Default fallback to Dashboard only if no match found and on home/root
+    if (!matched && (currentPage === "admin.html" || currentPage === "")) {
         const dashboardLi = document.querySelector(".navigation li a[href='admin.html']");
         if (dashboardLi) dashboardLi.parentElement.classList.add("hovered");
     }
@@ -895,6 +1173,45 @@ document.addEventListener("DOMContentLoaded", () => {
     highlightActiveTab();
     loadWelcomeName();
     
+    const searchInp = document.querySelector(".search input");
+    const searchIcon = document.querySelector(".search ion-icon");
+    let searchTimeout = null;
+    
+    if (searchInp) {
+        // Real-time debounced search
+        searchInp.addEventListener("input", () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performGlobalSearch, 300);
+        });
+        searchInp.addEventListener("keypress", (e) => { if (e.key === "Enter") performGlobalSearch(); });
+    }
+
+    // Handle auto-open triggers from search redirection
+    const urlParams = new URLSearchParams(window.location.search);
+    const triggerType = urlParams.get('openModal');
+    const triggerId = urlParams.get('id');
+    if (triggerType && triggerId) {
+        setTimeout(() => {
+            if (triggerType === 'appointment') window.openEditModal(triggerId);
+            else if (triggerType === 'user') window.openEditUserModal(triggerId);
+            else if (triggerType === 'doctor') window.openEditDoctorModal(triggerId);
+            else if (triggerType === 'admin') window.openEditAdminModal(triggerId);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 500);
+    }
+    if (searchIcon) {
+        searchIcon.style.cursor = "pointer";
+        searchIcon.onclick = performGlobalSearch;
+    }
+
+    // Immediate feedback for navigation clicks
+    navLinks.forEach((link) => {
+        link.addEventListener("click", function () {
+            list.forEach((item) => item.classList.remove("hovered"));
+            this.parentElement.classList.add("hovered");
+        });
+    });
+
     // Calendar date filter interaction
     if (apptDateFilter) {
         apptDateFilter.addEventListener("change", (e) => {
@@ -985,6 +1302,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         const activeUserId = document.getElementById("editUserId").value;
                         if (activeUserId) window.openEditUserModal(activeUserId);
                     }
+                    if (currentPage === "alldoctors.html") {
+                        const activeDocId = document.getElementById("editDocIdHidden").value;
+                        if (activeDocId) window.openEditDoctorModal(activeDocId);
+                    }
                 } else { showAdminModal("Error", result.error, 'error'); }
             } catch (err) { console.error("Update error:", err); }
         });
@@ -1018,11 +1339,164 @@ document.addEventListener("DOMContentLoaded", () => {
         closeUserBtn.onclick = () => document.getElementById("editUserModal").style.display = "none";
     }
 
+    const closeDocBtn = document.getElementById("closeDoctorModal");
+    const docStateSelect = document.getElementById("editDocState");
+    const docDistrictSelect = document.getElementById("editDocDistrict");
+    const docManualDistrict = document.getElementById("editDocDistrictManual");
+
+    if (docStateSelect) docStateSelect.addEventListener("change", (e) => populateDocDistrictOptions(e.target.value));
+    if (docDistrictSelect && docManualDistrict) {
+        docDistrictSelect.addEventListener("change", (e) => {
+            if (e.target.value === "__other__") { docManualDistrict.style.display = "block"; docManualDistrict.focus(); }
+            else { docManualDistrict.style.display = "none"; docManualDistrict.value = ""; }
+        });
+    }
+    if (closeDocBtn) closeDocBtn.onclick = () => document.getElementById("editDoctorModal").style.display = "none";
+
+    const editDocForm = document.getElementById("editDoctorForm");
+    if (editDocForm) {
+        const docMobileIn = document.getElementById("editDocMobile");
+        const docPinIn = document.getElementById("editDocPincode");
+        const docAdhrIn = document.getElementById("editDocAadhaar");
+
+        const enforceNumeric = (el, len) => {
+            if (!el) return;
+            el.addEventListener("input", (e) => {
+                e.target.value = e.target.value.replace(/\D/g, "");
+                if (e.target.value.length > len) e.target.value = e.target.value.slice(0, len);
+            });
+        };
+        enforceNumeric(docMobileIn, 10);
+        enforceNumeric(docPinIn, 6);
+        enforceNumeric(docAdhrIn, 12);
+
+        editDocForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("editDocIdHidden").value;
+            const mobile = document.getElementById("editDocMobile").value;
+            const pincode = document.getElementById("editDocPincode").value;
+            const aadhaar = document.getElementById("editDocAadhaar").value;
+
+            if (mobile && mobile.length !== 10) {
+                return showAdminModal("Validation Error", "Mobile number must be exactly 10 digits.", 'error');
+            }
+            if (pincode && pincode.length !== 6) {
+                return showAdminModal("Validation Error", "Pincode must be exactly 6 digits.", 'error');
+            }
+            if (aadhaar && aadhaar.length !== 12) {
+                return showAdminModal("Validation Error", "Aadhaar number must be exactly 12 digits.", 'error');
+            }
+
+            const districtValue = docDistrictSelect?.value === "__other__" ? docManualDistrict.value.trim() : docDistrictSelect?.value;
+
+            const body = {
+                name: document.getElementById("editDocName").value,
+                email: document.getElementById("editDocEmail").value,
+                mobile: mobile,
+                specialty: document.getElementById("editDocSpecialty").value,
+                is_available: document.getElementById("editDocIsAvailable").value === "true",
+                state: document.getElementById("editDocState").value,
+                district: districtValue,
+                pincode: pincode,
+                gender: document.getElementById("editDocGender").value,
+                aadhaar: aadhaar,
+                blood_group: document.getElementById("editDocBloodGroup").value
+            };
+
+            try {
+                const res = await fetch(`${backendUrl}/api/doctor/profile/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) {
+                    showAdminModal("Success", "Doctor profile updated successfully.");
+                    document.getElementById("editDoctorModal").style.display = "none";
+                    loadDoctorsRegistry();
+                } else { const result = await res.json(); showAdminModal("Error", result.error, 'error'); }
+            } catch (err) { console.error("Update error:", err); }
+        });
+    }
+
+    const closeAdminBtn = document.getElementById("closeAdminModal");
+    if (closeAdminBtn) closeAdminBtn.onclick = () => document.getElementById("editAdminModal").style.display = "none";
+
+    const editAdminForm = document.getElementById("editAdminForm");
+    if (editAdminForm) {
+        const adminMobileIn = document.getElementById("editAdminMobile");
+        const enforceNumeric = (el, len) => {
+            if (!el) return;
+            el.addEventListener("input", (e) => {
+                e.target.value = e.target.value.replace(/\D/g, "");
+                if (e.target.value.length > len) e.target.value = e.target.value.slice(0, len);
+            });
+        };
+        enforceNumeric(adminMobileIn, 10);
+
+        editAdminForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("editAdminIdHidden").value;
+            const mobile = document.getElementById("editAdminMobile").value;
+
+            if (mobile && mobile.length !== 10) {
+                return showAdminModal("Validation Error", "Mobile number must be exactly 10 digits.", 'error');
+            }
+
+            const body = {
+                name: document.getElementById("editAdminName").value,
+                email: document.getElementById("editAdminEmail").value,
+                mobile: mobile
+            };
+
+            try {
+                const res = await fetch(`${backendUrl}/api/admin/profile/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) {
+                    showAdminModal("Success", "Admin profile updated successfully.");
+                    document.getElementById("editAdminModal").style.display = "none";
+                    loadAdminsRegistry();
+                } else { const result = await res.json(); showAdminModal("Error", result.error, 'error'); }
+            } catch (err) { console.error("Update error:", err); }
+        });
+    }
+
     const userEditForm = document.getElementById("editUserForm");
     if (userEditForm) {
+        const mobileIn = document.getElementById("editUserMobile");
+        const pinIn = document.getElementById("editUserPincode");
+        const adhrIn = document.getElementById("editUserAadhaar");
+
+        const enforceNumeric = (el, len) => {
+            if (!el) return;
+            el.addEventListener("input", (e) => {
+                e.target.value = e.target.value.replace(/\D/g, "");
+                if (e.target.value.length > len) e.target.value = e.target.value.slice(0, len);
+            });
+        };
+        enforceNumeric(mobileIn, 10);
+        enforceNumeric(pinIn, 6);
+        enforceNumeric(adhrIn, 12);
+
         userEditForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const id = document.getElementById("editUserId").value;
+            const mobile = document.getElementById("editUserMobile").value;
+            const pincode = document.getElementById("editUserPincode").value;
+            const aadhaar = document.getElementById("editUserAadhaar").value;
+
+            if (mobile && mobile.length !== 10) {
+                return showAdminModal("Validation Error", "Mobile number must be exactly 10 digits.", 'error');
+            }
+            if (pincode && pincode.length !== 6) {
+                return showAdminModal("Validation Error", "Pincode must be exactly 6 digits.", 'error');
+            }
+            if (aadhaar && aadhaar.length !== 12) {
+                return showAdminModal("Validation Error", "Aadhaar number must be exactly 12 digits.", 'error');
+            }
+
             const districtSelect = document.getElementById("editUserDistrict");
             const manualDistrictInput = document.getElementById("editUserDistrictManual");
             const districtValue = districtSelect?.value === "__other__" ? manualDistrictInput.value.trim() : districtSelect?.value;
@@ -1153,7 +1627,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     showAdminModal("Success", "Doctor account created successfully!");
                     addDoctorForm.reset();
-                    setTimeout(() => window.location.href = "alldoctors.html", 2000);
+                    setTimeout(() => {
+                        document.documentElement.classList.add("app-loading");
+                        window.location.href = "alldoctors.html";
+                    }, 2000);
                 } else {
                     showAdminModal("Error", result.error || "Failed to register doctor.", 'error');
                 }
@@ -1164,12 +1641,24 @@ document.addEventListener("DOMContentLoaded", () => {
     // Handle Add User Form Submission
     const addUserForm = document.getElementById("addUserForm");
     if (addUserForm) {
+        const patMobileInput = document.getElementById("patMobile");
+        if (patMobileInput) {
+            patMobileInput.addEventListener("input", (e) => {
+                e.target.value = e.target.value.replace(/\D/g, "");
+                if (e.target.value.length > 10) e.target.value = e.target.value.slice(0, 10);
+            });
+        }
+
         addUserForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             const name = document.getElementById("patName").value;
             const email = document.getElementById("patEmail").value;
             const mobile = document.getElementById("patMobile").value;
             const password = document.getElementById("patPassword").value;
+
+            if (mobile.length !== 10) {
+                return showAdminModal("Validation Error", "Mobile number must be exactly 10 digits.", 'error');
+            }
 
             try {
                 const response = await fetch(`${backendUrl}/api/signup`, {
@@ -1181,7 +1670,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     showAdminModal("Success", "Patient profile registered successfully!");
                     addUserForm.reset();
-                    setTimeout(() => window.location.href = "alluser.html", 2000);
+                    setTimeout(() => {
+                        document.documentElement.classList.add("app-loading");
+                        window.location.href = "alluser.html";
+                    }, 2000);
                 } else {
                     showAdminModal("Error", result.error || "Failed to register patient.", 'error');
                 }
@@ -1228,6 +1720,160 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+
+/**
+ * Global Search Implementation - Real-time Dropdown
+ */
+window.handleGlobalSearchClick = function(type, id) {
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown) dropdown.classList.remove("active");
+
+    const pageMapping = {
+        'appointment': 'allappointments.html',
+        'user': 'alluser.html',
+        'doctor': 'alldoctors.html',
+        'admin': 'alladmins.html'
+    };
+
+    const modalMapping = {
+        'appointment': 'editAppointmentModal',
+        'user': 'editUserModal',
+        'doctor': 'editDoctorModal',
+        'admin': 'editAdminModal'
+    };
+
+    const targetPage = pageMapping[type];
+    const targetModalId = modalMapping[type];
+
+    // If modal exists on current page, open it. Otherwise redirect.
+    if (document.getElementById(targetModalId)) {
+        if (type === 'appointment') window.openEditModal(id);
+        else if (type === 'user') window.openEditUserModal(id);
+        else if (type === 'doctor') window.openEditDoctorModal(id);
+        else if (type === 'admin') window.openEditAdminModal(id);
+    } else {
+        window.location.href = `${targetPage}?openModal=${type}&id=${id}`;
+    }
+};
+
+async function performGlobalSearch() {
+    const searchInput = document.querySelector(".search input");
+    const dropdown = document.getElementById("searchDropdown");
+    if (!searchInput || !dropdown) return;
+    
+    const query = searchInput.value.trim();
+    if (!query) {
+        dropdown.classList.remove("active");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${backendUrl}/api/admin/global-lookup?query=${encodeURIComponent(query)}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+            dropdown.innerHTML = `<div class="search-no-results">${result.error || "No match found."}</div>`;
+            dropdown.classList.add("active");
+            return;
+        }
+
+        showGlobalSearchResult(result.type, result.data);
+    } catch (err) {
+        console.error("Global search error:", err);
+        dropdown.innerHTML = `<div class="search-no-results">Error connecting to search service.</div>`;
+        dropdown.classList.add("active");
+    }
+}
+
+function showGlobalSearchResult(type, data) {
+    const dropdown = document.getElementById("searchDropdown");
+    if (!dropdown) return;
+    
+    const title = type === 'appointment' ? data.appointment_id : (data.user_id || data.doc_id || 'Account');
+    const subtitle = type === 'appointment' 
+        ? `Patient: ${data.patient_name} | Doctor: ${data.doctor_name}`
+        : `Name: ${data.name} | ${data.email}`;
+
+    dropdown.innerHTML = `
+        <div class="search-result-item" onclick="window.handleGlobalSearchClick('${type}', '${data.id}')">
+            <h4>${title}</h4>
+            <p>${subtitle}</p>
+            <span class="type-badge">${type}</span>
+        </div>`;
+    dropdown.classList.add("active");
+}
+
+/**
+ * Close dropdown when clicking outside
+ */
+document.addEventListener("click", (e) => {
+    const searchContainer = document.querySelector(".search");
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown && !searchContainer.contains(e.target)) {
+        dropdown.classList.remove("active");
+    }
+});
+
+    // Handle Account Search for Reset
+    const accountSearchForm = document.getElementById("accountSearchForm");
+    if (accountSearchForm) {
+        accountSearchForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const uniqueId = document.getElementById("searchUniqueId").value.trim();
+            const email = document.getElementById("searchEmail").value.trim();
+
+            if (!uniqueId && !email) {
+                showAdminModal("Input Required", "Please enter either a Unique ID or an Email address to search.", "warning");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${backendUrl}/api/admin/search-account?uniqueId=${uniqueId}&email=${email}`);
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById("foundAccountId").value = data.id;
+                    document.getElementById("foundAccountTable").value = data.table;
+                    document.getElementById("displayAccountName").innerText = data.name;
+                    document.getElementById("displayAccountEmail").innerText = data.email;
+                    document.getElementById("displayAccountType").innerText = data.role;
+                    document.getElementById("accountDetailsSection").style.display = "block";
+                } else {
+                    showAdminModal("Search Failed", data.error, "error");
+                    document.getElementById("accountDetailsSection").style.display = "none";
+                }
+            } catch (err) { console.error(err); }
+        });
+    }
+
+    // Handle Force Password Update
+    const forcePasswordForm = document.getElementById("forcePasswordForm");
+    if (forcePasswordForm) {
+        forcePasswordForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("foundAccountId").value;
+            const table = document.getElementById("foundAccountTable").value;
+            const newPassword = document.getElementById("resetNewPassword").value;
+            const confirm = document.getElementById("resetConfirmPassword").value;
+
+            if (newPassword !== confirm) return showAdminModal("Error", "Passwords do not match.", "error");
+
+            try {
+                const res = await fetch(`${backendUrl}/api/admin/reset-account-password`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id, table, newPassword })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    showAdminModal("Success", result.message);
+                    forcePasswordForm.reset();
+                    document.getElementById("accountDetailsSection").style.display = "none";
+                    accountSearchForm.reset();
+                } else { showAdminModal("Access Denied", result.error, "error"); }
+            } catch (err) { console.error(err); }
+        });
+    }
+
     // Handle Add Admin Form Submission
     const addAdminForm = document.getElementById("addAdminForm");
     if (addAdminForm) {
@@ -1247,7 +1893,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     showAdminModal("Success", "Admin registered successfully!");
                     addAdminForm.reset();
-                    window.location.href = "alladmins.html";
+                    setTimeout(() => {
+                        document.documentElement.classList.add("app-loading");
+                        window.location.href = "alladmins.html";
+                    }, 2000);
                 } else {
                     showAdminModal("Error", result.error || "Failed to register admin.", 'error');
                 }
@@ -1268,7 +1917,6 @@ if (toggle && navigation && main) {
     toggle.onclick = function () {
         navigation.classList.toggle("active");
         main.classList.toggle("active");
-        document.querySelector(".main-overlay")?.classList.toggle("active");
     };
 }
 
@@ -1291,6 +1939,7 @@ const logoutBtn = document.getElementById("logoutBtn");
 if (logoutBtn) {
     logoutBtn.addEventListener("click", function (e) {
         e.preventDefault();
+        document.documentElement.classList.add("app-loading");
         localStorage.clear();
         window.location.replace("../index.html");
     });

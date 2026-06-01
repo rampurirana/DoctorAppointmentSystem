@@ -16,13 +16,21 @@
             <ul>
                 <li><a href="#"><div class="nav_logo"><strong>Noorie <span>Clinic</span></strong></div></a></li>
                 <li><a href="admin.html"><span class="icon"><ion-icon name="home-outline"></ion-icon></span><span class="title">Dashboard</span></a></li>
-                <li class="hovered"><a href="allappointments.html"><span class="icon"><ion-icon name="calendar-outline"></ion-icon></span><span class="title">Appointments</span></a></li>
+                <li><a href="allappointments.html"><span class="icon"><ion-icon name="calendar-outline"></ion-icon></span><span class="title">Appointments</span></a></li>
                 <li><a href="alluser.html"><span class="icon"><ion-icon name="people-outline"></ion-icon></span><span class="title">Users</span></a></li>
                 <li><a href="adduser.html"><span class="icon"><ion-icon name="person-add-outline"></ion-icon></span><span class="title">Add Users</span></a></li>
                 <li><a href="alldoctors.html"><span class="icon"><ion-icon name="medkit-outline"></ion-icon></span><span class="title">Doctors</span></a></li>
                 <li><a href="adddoctor.html"><span class="icon"><ion-icon name="add-circle-outline"></ion-icon></span><span class="title">Add Doctors</span></a></li>
                 <li><a href="alladmins.html"><span class="icon"><ion-icon name="shield-checkmark-outline"></ion-icon></span><span class="title">Admins</span></a></li>
                 <li><a href="addadmin.html"><span class="icon"><ion-icon name="lock-open-outline"></ion-icon></span><span class="title">Add Admins</span></a></li>
+                <li>
+                    <a href="change-password.html">
+                        <span class="icon">
+                            <ion-icon name="key-outline"></ion-icon>
+                        </span>
+                        <span class="title">Change Account Password</span>
+                    </a>
+                </li>
                 <li><a href="password.html"><span class="icon"><ion-icon name="lock-closed-outline"></ion-icon></span><span class="title">Password</span></a></li>
                 <li><a href="#" id="logoutBtn"><span class="icon"><ion-icon name="log-out-outline"></ion-icon></span><span class="title">Log Out</span></a></li>
             </ul>
@@ -33,9 +41,10 @@
                 <div class="toggle"><ion-icon name="menu-outline"></ion-icon></div>
                 <div class="search">
                     <label>
-                        <input type="text" placeholder="Search appointments...">
+                        <input type="text" placeholder="Search ID or Email...">
                         <ion-icon name="search-outline"></ion-icon>
                     </label>
+                    <div id="searchDropdown" class="search-dropdown"></div>
                 </div>
                 <div class="user"><img src="customer01.jpg" alt=""></div>
             </div>
@@ -133,9 +142,10 @@
                     </select>
                 </div>
 
-                <div class="button_field" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-                    <button type="submit">Save Changes</button>
-                    <button type="button" id="closeEditModal" style="background: #767268;">Cancel</button>
+                <div class="button_field" style="margin-top: 20px;">
+                    <button type="button" style="background: var(--danger);" onclick="window.deleteAppointment(document.getElementById('editApptId').value); document.getElementById('editAppointmentModal').style.display='none';"><ion-icon name="trash-outline"></ion-icon> Delete</button>
+                    <button type="submit"><ion-icon name="save-outline"></ion-icon> Save</button>
+                    <button type="button" id="closeEditModal" style="background: #767268;"><ion-icon name="close-outline"></ion-icon> Cancel</button>
                 </div>
             </form>
         </div>

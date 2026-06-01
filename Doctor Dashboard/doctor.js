@@ -1,13 +1,19 @@
-// Navigation behavior
+// Security and Role Guard (Consistency with Admin/User Dashboards)
+window.addEventListener("pageshow", function (event) {
+    const userId = localStorage.getItem("userId");
+    const userRole = (localStorage.getItem("userRole") || "").toLowerCase();
+    
+    if (!userId || userRole !== "doctor") {
+        document.documentElement.classList.add("app-loading");
+        localStorage.clear();
+        window.location.replace("../index.html");
+    }
+});
+
 const currentPage = window.location.pathname.split("/").pop();
 const navLinks = document.querySelectorAll(".navigation li a");
 const backendUrl = "http://localhost:10000";
 const doctorId = localStorage.getItem("userId");
-const userRole = (localStorage.getItem("userRole") || "").toLowerCase();
-
-if (userRole && userRole !== "doctor") {
-    window.location.replace("../index.html");
-}
 
 /**
  * Universal Modal Handler for Doctor Actions
@@ -226,6 +232,40 @@ document.addEventListener("DOMContentLoaded", () => {
     setupTabs();
     updateNotificationBadge();
 
+    const searchInp = document.querySelector(".search input");
+    const searchIcon = document.querySelector(".search ion-icon");
+    let searchTimeout = null;
+    
+    if (searchInp) {
+        // Real-time debounced global search
+        searchInp.addEventListener("input", () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performGlobalSearch, 300);
+            // Keep local filtering active for immediate UI feedback on current table
+            if (typeof renderDoctorAppointments === 'function') renderDoctorAppointments();
+        });
+        searchInp.addEventListener("keypress", (e) => { if (e.key === "Enter") performGlobalSearch(); });
+    }
+
+    if (searchIcon) {
+        searchIcon.style.cursor = "pointer";
+        searchIcon.onclick = performGlobalSearch;
+    }
+
+    // Handle auto-highlighting record from search redirection
+    const urlParams = new URLSearchParams(window.location.search);
+    const triggerId = urlParams.get('openAppt');
+    if (triggerId && currentPage === "doctor.html") {
+        setTimeout(() => {
+            const found = doctorAppointments.find(a => a.id === triggerId);
+            if (found && searchInp) {
+                searchInp.value = found.appointment_id;
+                renderDoctorAppointments();
+            }
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 800);
+    }
+
     // Auto-mark notifications as read if on the notifications page
     if (currentPage && currentPage.toLowerCase().includes("notification.html")) {
         markDoctorNotificationsAsRead();
@@ -404,7 +444,7 @@ function renderDoctorAppointments() {
     }
 
     if (appointments.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px;">No ${activeTab} appointments found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 30px;">No ${activeTab} appointments found.</td></tr>`;
         return;
     }
 
@@ -418,7 +458,6 @@ function renderDoctorAppointments() {
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td><span class="slot-number" style="font-size: 0.75rem; opacity: 0.8;">${appointment.user_id ? appointment.user_id.slice(0, 8) : 'N/A'}</span></td>
             <td>${appointment.patient_name || "N/A"}</td>
             <td>${new Date(appointment.appointment_date).toLocaleDateString()}</td>
             <td><div class="table-date" style="font-size: 0.85rem;">${appointment.appointment_id || "N/A"}</div></td>
@@ -432,6 +471,7 @@ function renderDoctorAppointments() {
                 ` : (accepted ? `
                     <button class="appointment-action complete">Completed</button>
                     <button class="appointment-action incomplete">Not Completed</button>
+                    <button class="appointment-action pending">Pending</button>
                 ` : (isCompleted ? `
                     <button class="appointment-action complete" disabled>Completed</button>
                 ` : (isNotCompleted ? `
@@ -446,6 +486,7 @@ function renderDoctorAppointments() {
         } else if (accepted) {
             tr.querySelector(".appointment-action.complete").onclick = () => completeAppointment(appointment.id);
             tr.querySelector(".appointment-action.incomplete").onclick = () => incompleteAppointment(appointment.id);
+            tr.querySelector(".appointment-action.pending").onclick = () => revertAppointmentToPending(appointment.id);
         }
         tbody.appendChild(tr);
     });
@@ -472,6 +513,12 @@ async function completeAppointment(id) {
 async function incompleteAppointment(id) {
     showDoctorModal("Mark Incomplete", "Mark this appointment as 'Not Completed'?", async () => {
         await updateAppointment(`/api/appointments/${id}/incomplete`, {});
+    });
+}
+
+async function revertAppointmentToPending(id) {
+    showDoctorModal("Revert to Pending", "Are you sure you want to move this appointment back to patient requests?", async () => {
+        await updateAppointment(`/api/appointments/${id}/pending`, {});
     });
 }
 
@@ -507,13 +554,87 @@ async function updateAppointment(path, body) {
     }
 }
 
-document.querySelector(".search input")?.addEventListener("input", renderDoctorAppointments);
+/**
+ * Global Search Implementation - Real-time Dropdown
+ */
+window.handleGlobalSearchClick = function(type, id) {
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown) dropdown.classList.remove("active");
+
+    if (type === 'appointment') {
+        // Redirection logic to main doctor dashboard with a trigger parameter
+        window.location.href = `doctor.html?openAppt=${id}`;
+    } else {
+        // For non-appointment records, doctors usually don't have separate profile pages.
+        showDoctorModal("Information", `Record found (${type}). Specialized view for this category is restricted to administrative staff.`);
+    }
+};
+
+async function performGlobalSearch() {
+    const searchInput = document.querySelector(".search input");
+    const dropdown = document.getElementById("searchDropdown");
+    if (!searchInput || !dropdown) return;
+    
+    const query = searchInput.value.trim();
+    if (!query) {
+        dropdown.classList.remove("active");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${backendUrl}/api/admin/global-lookup?query=${encodeURIComponent(query)}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+            dropdown.innerHTML = `<div class="search-no-results">${result.error || "No match found."}</div>`;
+            dropdown.classList.add("active");
+            return;
+        }
+
+        showGlobalSearchResult(result.type, result.data);
+    } catch (err) {
+        console.error("Global search error:", err);
+        dropdown.innerHTML = `<div class="search-no-results">Error connecting to search service.</div>`;
+        dropdown.classList.add("active");
+    }
+}
+
+function showGlobalSearchResult(type, data) {
+    const dropdown = document.getElementById("searchDropdown");
+    if (!dropdown) return;
+    
+    const title = type === 'appointment' ? data.appointment_id : (data.user_id || data.doc_id || 'Account');
+    const subtitle = type === 'appointment' 
+        ? `Patient: ${data.patient_name}`
+        : `Name: ${data.name} | ${data.email}`;
+
+    dropdown.innerHTML = `
+        <div class="search-result-item" onclick="window.handleGlobalSearchClick('${type}', '${data.id}')">
+            <h4>${title}</h4>
+            <p>${subtitle}</p>
+            <span class="type-badge">${type}</span>
+        </div>`;
+    dropdown.classList.add("active");
+}
+
+/**
+ * Close dropdown when clicking outside
+ */
+document.addEventListener("click", (e) => {
+    const searchContainer = document.querySelector(".search");
+    const dropdown = document.getElementById("searchDropdown");
+    if (dropdown && searchContainer && !searchContainer.contains(e.target)) {
+        dropdown.classList.remove("active");
+    }
+});
+
 // Logout handling
 document.addEventListener("DOMContentLoaded", () => {
     const logoutLink = document.querySelector(".navigation li a[href*='index.html']");
     if (logoutLink) {
         logoutLink.addEventListener("click", function(e) {
             e.preventDefault();
+            document.documentElement.classList.add("app-loading");
             localStorage.clear();
             window.location.replace("../index.html");
         });

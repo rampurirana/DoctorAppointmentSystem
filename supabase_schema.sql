@@ -153,6 +153,28 @@ CREATE TABLE IF NOT EXISTS admins (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Add user_id column to admins table for consistency (Format: ADM + Year + Serial)
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS user_id VARCHAR(50) UNIQUE;
+
+-- Sequence and Trigger for Admin IDs
+CREATE SEQUENCE IF NOT EXISTS admin_unique_number_seq START 1;
+
+CREATE OR REPLACE FUNCTION admins_generate_user_id() RETURNS trigger AS $$
+DECLARE
+    current_year TEXT := to_char(CURRENT_DATE, 'YYYY');
+BEGIN
+    IF NEW.user_id IS NULL OR NEW.user_id = '' THEN
+        NEW.user_id := 'ADM' || current_year || lpad(nextval('admin_unique_number_seq')::text, 5, '0');
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS admins_user_id_trigger ON admins;
+CREATE TRIGGER admins_user_id_trigger
+BEFORE INSERT ON admins
+FOR EACH ROW EXECUTE FUNCTION admins_generate_user_id();
+
 -- Copy existing admin records from the users table into the new admins table
 INSERT INTO admins (
     name, email, password_hash, role, registration_date, last_login_date,
@@ -268,6 +290,11 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS pincode VARCHAR(20);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS name_updated BOOLEAN DEFAULT FALSE NOT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_updated BOOLEAN DEFAULT FALSE NOT NULL;
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS doctor_id UUID REFERENCES doctors(id) ON DELETE CASCADE;
+
+-- Add suspension status column to all account tables
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE;
+ALTER TABLE doctors ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE;
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE;
 
 -- Disable Row Level Security (RLS) to allow backend API access
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;

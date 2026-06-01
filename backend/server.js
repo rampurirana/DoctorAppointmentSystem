@@ -22,16 +22,24 @@ async function generateCustomUserId() {
     const currentYear = new Date().getFullYear();
     const prefix = `USR${currentYear}`;
     
-    // Count existing user_ids for the current year
+    // Get the highest existing user_id for the current year
     const { data, error } = await supabase
         .from('users')
-        .select('user_id', { count: 'exact' })
-        .ilike('user_id', `${prefix}%`);
+        .select('user_id')
+        .ilike('user_id', `${prefix}%`)
+        .order('user_id', { ascending: false })
+        .limit(1);
     
     if (error) throw error;
     
-    const count = (data?.length || 0) + 1;
-    const customId = `${prefix}${String(count).padStart(5, '0')}`;
+    let nextNumber = 1;
+    if (data && data.length > 0) {
+        const lastId = data[0].user_id;
+        const lastNumber = parseInt(lastId.replace(prefix, ''), 10);
+        nextNumber = lastNumber + 1;
+    }
+    
+    const customId = `${prefix}${String(nextNumber).padStart(5, '0')}`;
     
     return customId;
 }
@@ -88,7 +96,7 @@ app.post('/api/signup', async (req, res) => {
             .insert([
                 accountDetails
             ])
-            .select('id, name, email, role, user_id');
+            .select();
 
         if (error) throw error;
         
@@ -149,6 +157,10 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        if (user.is_suspended) {
+            return res.status(403).json({ error: 'Your account has been suspended please contact admin' });
+        }
+
         // Update the last_login_date field
         await supabase
             .from(accountTable)
@@ -169,7 +181,7 @@ app.get('/api/user/:id', async (req, res) => {
     try {
         const { data: user, error } = await supabase
             .from('users')
-            .select('id, user_id, name, email, role, mobile, gender, aadhaar, blood_group, country, state, district, pincode, registration_date, last_login_date, name_updated, email_updated')
+            .select('id, user_id, name, email, role, mobile, gender, aadhaar, blood_group, country, state, district, pincode, registration_date, last_login_date, name_updated, email_updated, is_suspended')
             .eq('id', id)
             .single();
 
@@ -286,7 +298,7 @@ app.get('/api/doctor/profile/:id', async (req, res) => {
     try {
         const { data: doctor, error } = await supabase
             .from('doctors')
-            .select('id, doc_id, name, email, role, specialty, is_available, mobile, gender, aadhaar, blood_group, country, state, district, pincode, name_updated, email_updated')
+            .select('id, doc_id, name, email, role, specialty, is_available, mobile, gender, aadhaar, blood_group, country, state, district, pincode, name_updated, email_updated, is_suspended')
             .eq('id', id)
             .single();
 
@@ -387,7 +399,7 @@ app.get('/api/admin/profile/:id', async (req, res) => {
     try {
         const { data: admin, error } = await supabase
             .from('admins')
-            .select('id, name, email, role, mobile, registration_date, last_login_date')
+            .select('id, user_id, name, email, role, mobile, registration_date, last_login_date, is_suspended')
             .eq('id', id)
             .single();
 
@@ -425,7 +437,97 @@ app.put('/api/admin/:id/password', async (req, res) => {
 
         if (updateErr) throw updateErr;
 
+        // Log notification for the admin
+        await supabase
+            .from('notifications')
+            .insert([
+                {
+                    message: 'Your administrative account password was changed successfully.'
+                }
+            ]);
+
         res.status(200).json({ message: 'Admin password changed successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 12e. REVERT TO PENDING ROUTE ---
+app.patch('/api/appointments/:id/pending', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data, error } = await supabase
+            .from('appointments')
+            .update({ status: 'Pending', booking_slot: null })
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        res.status(200).json({ message: 'Appointment moved back to Pending', appointment: data?.[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- 5f. UPDATE ADMIN PROFILE ROUTE ---
+app.put('/api/admin/profile/:id', async (req, res) => {
+    const { id } = req.params;
+    const { name, email, mobile } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from('admins')
+            .update({ name, email, mobile })
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+        res.status(200).json({ message: 'Admin profile updated successfully', admin: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin toggle admin suspension
+app.put('/api/admin/admins/:id/suspend', async (req, res) => {
+    const { id } = req.params;
+    const { is_suspended } = req.body;
+    const SUPER_ADMIN_EMAIL = "admin@noorieclinic.com";
+
+    try {
+        // Check if target is Super Admin
+        const { data: target } = await supabase.from('admins').select('email').eq('id', id).single();
+        if (target && target.email === SUPER_ADMIN_EMAIL) {
+            return res.status(403).json({ error: 'The Super Administrator account cannot be suspended.' });
+        }
+
+        const { data, error } = await supabase
+            .from('admins')
+            .update({ is_suspended })
+            .eq('id', id)
+            .select();
+        if (error) throw error;
+        res.status(200).json({ message: `Admin ${is_suspended ? 'suspended' : 'activated'} successfully`, admin: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin delete admin account
+app.delete('/api/admin/admins/:id', async (req, res) => {
+    const { id } = req.params;
+    const SUPER_ADMIN_EMAIL = "admin@noorieclinic.com";
+
+    try {
+        // Check if target is Super Admin
+        const { data: target } = await supabase.from('admins').select('email').eq('id', id).single();
+        if (target && target.email === SUPER_ADMIN_EMAIL) {
+            return res.status(403).json({ error: 'The Super Administrator account cannot be deleted.' });
+        }
+
+        const { error } = await supabase.from('admins').delete().eq('id', id);
+        if (error) throw error;
+        res.status(200).json({ message: 'Admin account deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -438,7 +540,7 @@ app.get('/api/doctors', async (req, res) => {
     try {
         let query = supabase
             .from('doctors')
-            .select('id, name, specialty, is_available, email, state, district')
+            .select('id, doc_id, name, specialty, is_available, email, state, district, is_suspended')
             .order('specialty', { ascending: true })
             .order('name', { ascending: true });
 
@@ -449,6 +551,42 @@ app.get('/api/doctors', async (req, res) => {
         const { data, error } = await query;
         if (error) throw error;
         res.status(200).json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin toggle doctor suspension
+app.put('/api/admin/doctors/:id/suspend', async (req, res) => {
+    const { id } = req.params;
+    const { is_suspended } = req.body;
+    try {
+        const updatePayload = { is_suspended };
+
+        // Automatically set availability to false if the doctor is suspended
+        if (is_suspended) {
+            updatePayload.is_available = false;
+        }
+
+        const { data, error } = await supabase
+            .from('doctors')
+            .update(updatePayload)
+            .eq('id', id)
+            .select();
+        if (error) throw error;
+        res.status(200).json({ message: `Doctor ${is_suspended ? 'suspended' : 'activated'} successfully`, doctor: data[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin delete doctor account
+app.delete('/api/admin/doctors/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase.from('doctors').delete().eq('id', id);
+        if (error) throw error;
+        res.status(200).json({ message: 'Doctor account deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -495,7 +633,8 @@ app.post('/api/appointments', async (req, res) => {
             .from('doctors')
             .select('id, name, specialty')
             .eq('id', doctorId)
-            .eq('is_available', true) // Server-side validation for availability
+            .eq('is_available', true) 
+            .eq('is_suspended', false) // Prevent booking if doctor is suspended
             .maybeSingle();
 
         if (doctorError) throw doctorError;
@@ -1041,12 +1180,29 @@ app.get('/api/admin/users', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('users')
-            .select('id, user_id, name, email, mobile, country, state, district, pincode, registration_date')
+            .select('id, user_id, name, email, mobile, country, state, district, pincode, registration_date, is_suspended')
             .ilike('role', 'user')
             .order('registration_date', { ascending: false });
 
         if (error) throw error;
         res.status(200).json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin toggle user suspension
+app.put('/api/admin/users/:id/suspend', async (req, res) => {
+    const { id } = req.params;
+    const { is_suspended } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .update({ is_suspended })
+            .eq('id', id)
+            .select();
+        if (error) throw error;
+        res.status(200).json({ message: `User ${is_suspended ? 'suspended' : 'activated'} successfully`, user: data[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -1186,12 +1342,100 @@ app.get('/api/admin/recent-activity', async (req, res) => {
     }
 });
 
+// --- ADMIN: GLOBAL SEARCH (ID, EMAIL, APPOINTMENT ID) ---
+app.get('/api/admin/global-lookup', async (req, res) => {
+    const { query } = req.query;
+    if (!query) return res.status(400).json({ error: 'Search query is required' });
+
+    try {
+        // 1. Search Appointments by appointment_id
+        const { data: appt } = await supabase.from('appointments').select('*, users(user_id), doctors(doc_id)').eq('appointment_id', query.toUpperCase()).maybeSingle();
+        if (appt) return res.json({ type: 'appointment', data: appt });
+
+        // 2. Search Users by user_id or email
+        const { data: user } = await supabase.from('users').select('*').or(`user_id.eq.${query},email.eq.${query}`).maybeSingle();
+        if (user) return res.json({ type: 'user', data: user });
+
+        // 3. Search Doctors by doc_id or email
+        const { data: doc } = await supabase.from('doctors').select('*').or(`doc_id.eq.${query},email.eq.${query}`).maybeSingle();
+        if (doc) return res.json({ type: 'doctor', data: doc });
+
+        // 4. Search Admins by user_id or email
+        const { data: admin } = await supabase.from('admins').select('*').or(`user_id.eq.${query},email.eq.${query}`).maybeSingle();
+        if (admin) return res.json({ type: 'admin', data: admin });
+
+        res.status(404).json({ error: 'No record found matching this ID or Email.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ADMIN: SEARCH ACCOUNT FOR PASSWORD RESET ---
+app.get('/api/admin/search-account', async (req, res) => {
+    const { uniqueId, email } = req.query;
+    
+    if (!uniqueId && !email) {
+        return res.status(400).json({ error: 'Please provide either a Unique ID or an Email.' });
+    }
+
+    try {
+        // Search Users
+        let userQuery = supabase.from('users').select('id, user_id, name, email, role');
+        if (uniqueId && email) userQuery = userQuery.or(`user_id.eq.${uniqueId},email.eq.${email}`);
+        else if (uniqueId) userQuery = userQuery.eq('user_id', uniqueId);
+        else userQuery = userQuery.eq('email', email);
+        
+        let { data: account } = await userQuery.maybeSingle();
+        if (account) return res.json({ ...account, table: 'users' });
+
+        // Search Doctors
+        let docQuery = supabase.from('doctors').select('id, doc_id, name, email, role');
+        if (uniqueId && email) docQuery = docQuery.or(`doc_id.eq.${uniqueId},email.eq.${email}`);
+        else if (uniqueId) docQuery = docQuery.eq('doc_id', uniqueId);
+        else docQuery = docQuery.eq('email', email);
+
+        ({ data: account } = await docQuery.maybeSingle());
+        if (account) return res.json({ ...account, table: 'doctors', user_id: account.doc_id });
+
+        // Search Admins
+        let adminQuery = supabase.from('admins').select('id, user_id, name, email, role');
+        if (uniqueId && email) adminQuery = adminQuery.or(`user_id.eq.${uniqueId},email.eq.${email}`);
+        else if (uniqueId) adminQuery = adminQuery.eq('user_id', uniqueId);
+        else adminQuery = adminQuery.eq('email', email);
+
+        ({ data: account } = await adminQuery.maybeSingle());
+        if (account) return res.json({ ...account, table: 'admins' });
+
+        res.status(404).json({ error: 'Account not found with provided ID and Email.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- ADMIN: FORCE RESET PASSWORD ---
+app.put('/api/admin/reset-account-password', async (req, res) => {
+    const { id, table, newPassword } = req.body;
+    const SUPER_ADMIN_EMAIL = "admin@noorieclinic.com";
+    try {
+        const { data: target } = await supabase.from(table).select('email').eq('id', id).single();
+        if (target && target.email === SUPER_ADMIN_EMAIL) {
+            return res.status(403).json({ error: 'The Super Administrator password cannot be reset via this tool.' });
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const { error } = await supabase.from(table).update({ password_hash: hashedPassword }).eq('id', id);
+        if (error) throw error;
+        res.json({ message: 'Account password updated successfully.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // --- 6a. LIST ALL ADMINS ---
 app.get('/api/admins', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('admins')
-            .select('id, name, email, registration_date')
+            .select('id, user_id, name, email, registration_date, is_suspended, mobile')
             .order('registration_date', { ascending: false });
 
         if (error) throw error;

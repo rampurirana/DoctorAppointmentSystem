@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctors Registry</title>
     <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+    <link rel="stylesheet" href="../assets/app-shell.css">
+    <script src="../assets/app-shell.js"></script>
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -27,6 +29,14 @@
                 <li><a href="adddoctor.html"><span class="icon"><ion-icon name="add-circle-outline"></ion-icon></span><span class="title">Add Doctors</span></a></li>
                 <li><a href="alladmins.html"><span class="icon"><ion-icon name="shield-checkmark-outline"></ion-icon></span><span class="title">Admins</span></a></li>
                 <li><a href="addadmin.html"><span class="icon"><ion-icon name="lock-open-outline"></ion-icon></span><span class="title">Add Admins</span></a></li>
+                <li>
+                    <a href="change-password.html">
+                        <span class="icon">
+                            <ion-icon name="key-outline"></ion-icon>
+                        </span>
+                        <span class="title">Change Account Password</span>
+                    </a>
+                </li>
                 <li><a href="password.html"><span class="icon"><ion-icon name="lock-closed-outline"></ion-icon></span><span class="title">Password</span></a></li>
                 <li><a href="#" id="logoutBtn"><span class="icon"><ion-icon name="log-out-outline"></ion-icon></span><span class="title">Log Out</span></a></li>
             </ul>
@@ -35,7 +45,13 @@
         <div class="main">
             <div class="topbar">
                 <div class="toggle"><ion-icon name="menu-outline"></ion-icon></div>
-                <div class="search"><label><input type="text" placeholder="Search Doctors Registry"><ion-icon name="search-outline"></ion-icon></label></div>
+                <div class="search">
+                    <label>
+                        <input type="text" placeholder="Search ID or Email...">
+                        <ion-icon name="search-outline"></ion-icon>
+                    </label>
+                    <div id="searchDropdown" class="search-dropdown"></div>
+                </div>
                 <div class="user"><img src="customer01.jpg" alt=""></div>
             </div>
 
@@ -55,13 +71,14 @@
                     <table>
                         <thead>
                             <tr>
-                                <td>Doctor ID</td>
-                                <td>Name</td>
-                                <td>Specialty</td>
-                                <td>Email</td>
-                                <td>State</td>
-                                <td>District</td>
-                                <td>Availability</td>
+                                <td style="font-weight: 700;">Doctor ID</td>
+                                <td style="font-weight: 700;">Name</td>
+                                <td style="font-weight: 700;">Specialty</td>
+                                <td style="font-weight: 700;">Email</td>
+                                <td style="font-weight: 700;">State</td>
+                                <td style="font-weight: 700;">District</td>
+                                <td style="font-weight: 700;">Availability</td>
+                                <td style="font-weight: 700;">Actions</td>
                             </tr>
                         </thead>
                         <tbody id="doctorsRegistryTable">
@@ -72,7 +89,257 @@
             </div>
         </div>
     </div>
+
+    <!-- Edit Doctor Modal -->
+    <div id="editDoctorModal" class="modal">
+        <div class="modal-content user-profile-modal">
+            <h3>Doctor Profile Management</h3>
+            <div class="modal-section">
+                <div class="profile-field">
+                    <label>Doctor ID</label>
+                    <input type="text" id="editDocDocId" readonly>
+                </div>
+                <div class="profile-field">
+                    <label>Specialty</label>
+                    <select id="editDocSpecialty" required>
+                        <option value="General Physician">General Physician</option>
+                        <option value="Cardiologist">Cardiologist</option>
+                        <option value="Dermatologist">Dermatologist</option>
+                        <option value="Neurologist">Neurologist</option>
+                        <option value="Pediatrician">Pediatrician</option>
+                        <option value="Orthopedist">Orthopedist</option>
+                    </select>
+                </div>
+                <div class="profile-field">
+                    <label>Full Name</label>
+                    <input type="text" id="editDocName" placeholder="Full Name" required>
+                </div>
+                <div class="profile-field">
+                    <label>Email Address</label>
+                    <input type="email" id="editDocEmail" placeholder="Email Address" required>
+                </div>
+                <div class="profile-field">
+                    <label>Mobile Number</label>
+                    <input type="tel" id="editDocMobile" placeholder="Mobile Number">
+                </div>
+                <div class="profile-field">
+                    <label>Availability</label>
+                    <select id="editDocIsAvailable">
+                        <option value="true">Available</option>
+                        <option value="false">Busy / On Leave</option>
+                    </select>
+                </div>
+                <div class="profile-field">
+                    <label>State</label>
+                    <select id="editDocState">
+                        <option value="">Select State</option>
+                        <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                        <option value="Andhra Pradesh">Andhra Pradesh</option>
+                        <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                        <option value="Assam">Assam</option>
+                        <option value="Bihar">Bihar</option>
+                        <option value="Chandigarh">Chandigarh</option>
+                        <option value="Chhattisgarh">Chhattisgarh</option>
+                        <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Goa">Goa</option>
+                        <option value="Gujarat">Gujarat</option>
+                        <option value="Haryana">Haryana</option>
+                        <option value="Himachal Pradesh">Himachal Pradesh</option>
+                        <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                        <option value="Jharkhand">Jharkhand</option>
+                        <option value="Karnataka">Karnataka</option>
+                        <option value="Kerala">Kerala</option>
+                        <option value="Ladakh">Ladakh</option>
+                        <option value="Lakshadweep">Lakshadweep</option>
+                        <option value="Madhya Pradesh">Madhya Pradesh</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Manipur">Manipur</option>
+                        <option value="Meghalaya">Meghalaya</option>
+                        <option value="Mizoram">Mizoram</option>
+                        <option value="Nagaland">Nagaland</option>
+                        <option value="Odisha">Odisha</option>
+                        <option value="Puducherry">Puducherry</option>
+                        <option value="Punjab">Punjab</option>
+                        <option value="Rajasthan">Rajasthan</option>
+                        <option value="Sikkim">Sikkim</option>
+                        <option value="Tamil Nadu">Tamil Nadu</option>
+                        <option value="Telangana">Telangana</option>
+                        <option value="Tripura">Tripura</option>
+                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                        <option value="Uttarakhand">Uttarakhand</option>
+                        <option value="West Bengal">West Bengal</option>
+                    </select>
+                </div>
+                <div class="profile-field">
+                    <label>District</label>
+                    <select id="editDocDistrict">
+                        <option value="">Select district</option>
+                    </select>
+                    <input type="text" id="editDocDistrictManual" placeholder="Enter district" class="hidden-district-input">
+                </div>
+                <div class="profile-field">
+                    <label>Pincode</label>
+                    <input type="text" id="editDocPincode" placeholder="Pincode">
+                </div>
+                <div class="profile-field">
+                    <label>Gender</label>
+                    <select id="editDocGender">
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="profile-field">
+                    <label>Aadhaar</label>
+                    <input type="text" id="editDocAadhaar" placeholder="Aadhaar Number">
+                </div>
+                <div class="profile-field">
+                    <label>Blood Group</label>
+                    <select id="editDocBloodGroup">
+                        <option value="">Select blood group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="appointment-summary-box" style="margin-bottom: 20px; background: #fff; border: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 15px; border-radius: 12px; box-shadow: inset 0 0 10px rgba(0,0,0,0.02);">
+                <div style="text-align: center;">
+                    <p style="font-size: 0.75rem; color: var(--text-light); font-weight: 700; margin-bottom: 5px;">COMPLETED</p>
+                    <h4 id="docStatCompleted" style="color: var(--success); font-size: 1.3rem;">0</h4>
+                </div>
+                <div style="text-align: center;">
+                    <p style="font-size: 0.75rem; color: var(--text-light); font-weight: 700; margin-bottom: 5px;">REJECTED</p>
+                    <h4 id="docStatRejected" style="color: var(--danger); font-size: 1.3rem;">0</h4>
+                </div>
+                <div style="text-align: center;">
+                    <p style="font-size: 0.75rem; color: var(--text-light); font-weight: 700; margin-bottom: 5px;">NOT COMPLETED</p>
+                    <h4 id="docStatIncomplete" style="color: var(--warning); font-size: 1.3rem;">0</h4>
+                </div>
+                <div style="text-align: center;">
+                    <p style="font-size: 0.75rem; color: var(--text-light); font-weight: 700; margin-bottom: 5px;">PENDING</p>
+                    <h4 id="docStatPending" style="color: var(--secondary-color); font-size: 1.3rem;">0</h4>
+                </div>
+                <div style="text-align: center;">
+                    <p style="font-size: 0.75rem; color: var(--text-light); font-weight: 700; margin-bottom: 5px;">ACCEPTED</p>
+                    <h4 id="docStatAccepted" style="color: #1976d2; font-size: 1.3rem;">0</h4>
+                </div>
+            </div>
+
+            <div class="history-section">
+                <h4>Clinical Appointment History</h4>
+                <div class="history-table-wrapper">
+                    <table class="profile-history-table">
+                        <thead>
+                            <tr>
+                                <td style="font-weight: 700;">Appt ID</td>
+                                <td style="font-weight: 700;">Date</td>
+                                <td style="font-weight: 700;">Patient</td>
+                                <td style="font-weight: 700;">Slot</td>
+                                <td style="font-weight: 700;">Status</td>
+                                <td style="font-weight: 700;">Actions</td>
+                            </tr>
+                        </thead>
+                        <tbody id="editDocAppointmentsTable">
+                            <tr><td colspan="6" class="history-empty">Loading records...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <form id="editDoctorForm" style="margin-top: 10px;">
+                <input type="hidden" id="editDocIdHidden">
+                <div class="button_field" style="display: flex; gap: 12px; justify-content: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color); flex-wrap: wrap;">
+                    <button type="button" id="suspendDocBtn" style="background: #e67e22;"><ion-icon name="ban-outline"></ion-icon> Suspend Account</button>
+                    <button type="button" id="deleteDocBtn" style="background: var(--danger);"><ion-icon name="trash-outline"></ion-icon> Delete Account</button>
+                    <button type="submit"><ion-icon name="save-outline"></ion-icon> Save Changes</button>
+                    <button type="button" id="closeDoctorModal" style="background: #767268;"><ion-icon name="close-circle-outline"></ion-icon> Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Appointment Modal (Required for modifying from history) -->
+    <div id="editAppointmentModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px; color: var(--primary-color-dark);">Modify Appointment</h3>
+            <form id="editAppointmentForm">
+                <input type="hidden" id="editApptId">
+                
+                <div class="password_input">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <input type="text" id="editPatientName" placeholder="Patient Name" required>
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    <input type="date" id="editApptDate" required>
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="medkit-outline"></ion-icon>
+                    <select id="editDoctorType" required>
+                        <option value="" disabled selected>Select Doctor Type</option>
+                        <option value="General Physician">General Physician</option>
+                        <option value="Cardiologist">Cardiologist</option>
+                        <option value="Dermatologist">Dermatologist</option>
+                        <option value="Neurologist">Neurologist</option>
+                        <option value="Pediatrician">Pediatrician</option>
+                        <option value="Orthopedist">Orthopedist</option>
+                    </select>
+                </div>
+                <div class="password_input">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <select id="editDoctorId" required></select>
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <input type="text" id="editSlot" placeholder="Slot/Serial (e.g. 01)">
+                </div>
+                
+                <div class="password_input">
+                    <ion-icon name="stats-chart-outline"></ion-icon>
+                    <select id="editStatus" required>
+                        <option value="Pending">Pending</option>
+                        <option value="Accepted">Accepted</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="button_field" style="margin-top: 20px;">
+                    <button type="button" style="background: var(--danger);" onclick="window.deleteAppointment(document.getElementById('editApptId').value); document.getElementById('editAppointmentModal').style.display='none';"><ion-icon name="trash-outline"></ion-icon> Delete</button>
+                    <button type="submit"><ion-icon name="save-outline"></ion-icon> Save</button>
+                    <button type="button" id="closeEditModal" style="background: #767268;"><ion-icon name="close-outline"></ion-icon> Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Action Status Modal -->
+    <div id="adminActionModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <ion-icon id="modalIcon" name="checkmark-circle-outline" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 15px;"></ion-icon>
+            <h3 id="modalTitle" style="margin-bottom: 10px; color: var(--text-dark);">Success</h3>
+            <p id="modalMessage" style="color: var(--text-light); margin-bottom: 25px;">Operation completed successfully.</p>
+            <div class="button_field" style="display: flex; justify-content: center; gap: 10px;">
+                <button type="button" id="modalCloseBtn">Close</button>
+                <button type="button" id="modalConfirmBtn" style="display: none; background: var(--danger);">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <script src="admin.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
 </body>
 </html>
