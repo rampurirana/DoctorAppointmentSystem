@@ -12,7 +12,7 @@ window.addEventListener("pageshow", function (event) {
 
 const currentPage = window.location.pathname.split("/").pop();
 const navLinks = document.querySelectorAll(".navigation li a");
-const backendUrl = "http://localhost:10000";
+const backendUrl = "https://doctor-backend-yrry.onrender.com";
 const doctorId = localStorage.getItem("userId");
 
 /**
@@ -74,7 +74,7 @@ async function loadWelcomeName() {
 
     // Fetch fresh name from database asynchronously
     try {
-        const response = await fetch(`http://localhost:10000/api/doctor/profile/${userId}`);
+        const response = await fetch(`https://doctor-backend-yrry.onrender.com/api/doctor/profile/${userId}`);
         if (response.ok) {
             const user = await response.json();
             if (user.name && user.name !== cachedName) {

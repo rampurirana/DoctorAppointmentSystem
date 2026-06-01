@@ -38,7 +38,7 @@ async function loadWelcomeName() {
     // Only fetch if not in mock mode
     if (userId !== "mock_user") {
         try {
-            const response = await fetch(`http://localhost:10000/api/user/${userId}`);
+            const response = await fetch(`https://doctor-backend-yrry.onrender.com/api/user/${userId}`);
             if (response.ok) {
                 const user = await response.json();
                 if (user.name && user.name !== cachedName) {
@@ -60,7 +60,7 @@ async function updateNotificationBadge() {
     if (!userId || userId === "mock_user") return;
 
     try {
-        const response = await fetch(`http://localhost:10000/api/user/${userId}/notifications/unread-count`);
+        const response = await fetch(`https://doctor-backend-yrry.onrender.com/api/user/${userId}/notifications/unread-count`);
         if (!response.ok) return;
         const { unreadCount } = await response.json();
 
