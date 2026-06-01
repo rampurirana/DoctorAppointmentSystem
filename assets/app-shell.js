@@ -1,4 +1,6 @@
 (function () {
+    window.APP_BACKEND_URL = "https://doctor-backend-yrry.onrender.com";
+
     let initialPageLoad = true;
     let requestCount = 0;
 

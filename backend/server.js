@@ -14,6 +14,10 @@ const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 const defaultDoctorSpecialty = 'General Physician';
 
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 /**
  * Generate custom user ID in format: USR + Year + Auto Increment
  * Example: USR202400001, USR202400002, etc.

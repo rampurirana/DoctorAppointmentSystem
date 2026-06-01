@@ -12,7 +12,7 @@ window.addEventListener("pageshow", function (event) {
 
 const currentPage = decodeURIComponent(window.location.pathname).split("/").pop()?.toLowerCase();
 const navLinks = document.querySelectorAll(".navigation li a");
-const backendUrl = "https://doctor-backend-yrry.onrender.com";
+const backendUrl = window.APP_BACKEND_URL;
 let appointmentsLineChart = null;
 let statusDoughnutChart = null;
 const apptDateFilter = document.getElementById("adminApptDate");

@@ -353,7 +353,7 @@
             async function markNotificationsAsRead() {
                 if (!currentDoctorId) return;
                 try {
-                    await fetch(`http://localhost:10000/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications/read`, {
+                    await fetch(`${backendUrl}/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications/read`, {
                         method: 'PATCH'
                     });
                     if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
@@ -383,7 +383,7 @@
                 if (!currentDoctorId) return;
 
                 try {
-                    const response = await fetch(`http://localhost:10000/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications`);
+                    const response = await fetch(`${backendUrl}/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications`);
                     const contentType = response.headers.get("content-type") || "";
                     if (!contentType.includes("application/json")) {
                         throw new Error("The backend API returned a web page instead of data. Restart the backend server.");
@@ -414,7 +414,7 @@
                 
                 showDoctorModal("Clear All", "Are you sure you want to delete all notifications?", async () => {
                     try {
-                        const response = await fetch(`http://localhost:10000/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications`, {
+                        const response = await fetch(`${backendUrl}/api/doctors/${encodeURIComponent(currentDoctorId)}/notifications`, {
                             method: 'DELETE'
                         });
 
