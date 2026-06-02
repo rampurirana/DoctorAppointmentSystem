@@ -274,6 +274,20 @@
         const backendUrl = (window.APP_BACKEND_URL || "https://doctor-backend-yrry.onrender.com");
         let availableDoctors = [];
 
+        async function readApiMessage(response, fallback) {
+            const text = await response.text();
+            if (!text) return fallback;
+            try {
+                const data = JSON.parse(text);
+                return data.error || data.message || fallback;
+            } catch (e) {
+                if (text.includes("Cannot GET")) {
+                    return "Doctor list route is missing on the Render backend. Redeploy the backend from the backend folder.";
+                }
+                return fallback;
+            }
+        }
+
         function populateDoctorOptions() {
             const specialty = document.getElementById("selectdoctortype").value;
             const doctorSelect = document.getElementById("selectdoctor");
@@ -306,12 +320,14 @@
                     ];
                 } else {
                     const response = await fetch(`${backendUrl}/api/doctors`);
+                    if (!response.ok) {
+                        throw new Error(await readApiMessage(response, "Could not load doctors"));
+                    }
                     data = await response.json();
-                    if (!response.ok) throw new Error(data.error || "Could not load doctors");
                 }
-                availableDoctors = data;
+                availableDoctors = Array.isArray(data) ? data : [];
 
-                const specialties = [...new Set(data.map((doctor) => doctor.specialty))];
+                const specialties = [...new Set(availableDoctors.map((doctor) => doctor.specialty).filter(Boolean))];
                 specialtySelect.innerHTML = `<option value="" disabled selected>Select Doctor Type</option>`;
                 specialties.forEach((specialty) => {
                     const option = document.createElement("option");
@@ -325,7 +341,7 @@
                 }
             } catch (err) {
                 console.error("Failed to fetch doctors:", err);
-                specialtySelect.innerHTML = `<option value="" disabled selected>Doctors unavailable</option>`;
+                specialtySelect.innerHTML = `<option value="" disabled selected>${err.message}</option>`;
             }
         }
 

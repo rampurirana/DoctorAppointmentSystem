@@ -363,6 +363,20 @@
         let isNameLocked = false;
         let isEmailLocked = false;
 
+        async function readApiMessage(response, fallback) {
+            const text = await response.text();
+            if (!text) return fallback;
+            try {
+                const data = JSON.parse(text);
+                return data.error || data.message || fallback;
+            } catch (e) {
+                if (text.includes("Cannot GET")) {
+                    return "This profile route is missing on the Render backend. Redeploy the backend from the backend folder.";
+                }
+                return fallback;
+            }
+        }
+
         // State-District Data Mapping
         const stateDistricts = {
             "Andhra Pradesh": ["Anantapur", "Chittoor", "East Godavari", "Guntur", "Krishna", "Kurnool", "Nellore", "Prakasam", "Srikakulam", "Visakhapatnam", "Vizianagaram", "West Godavari", "YSR Kadapa"],
@@ -465,11 +479,7 @@
                     const user = await response.json();
                     populateProfile(user);
                 } else {
-                    let message = "Unable to load profile data.";
-                    try {
-                        const errorData = await response.json();
-                        message = errorData.error || message;
-                    } catch (e) {}
+                    const message = await readApiMessage(response, "Unable to load profile data.");
                     showUserModal("Profile Error", message);
                     populateProfile({
                         user_id: "Unavailable",

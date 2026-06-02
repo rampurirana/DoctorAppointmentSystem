@@ -20,11 +20,40 @@ let allDoctorsForEdit = [];
 let pendingModalAction = null;
 
 async function readApiError(response, fallback) {
+    const text = await response.text();
+    if (!text) return fallback;
     try {
-        const payload = await response.json();
+        const payload = JSON.parse(text);
         return payload.error || payload.message || fallback;
     } catch (e) {
+        if (text.includes("Cannot GET") || text.includes("Cannot POST") || text.includes("Cannot PUT") || text.includes("Cannot DELETE")) {
+            return "This route is missing on the Render backend. Redeploy the backend from the backend folder.";
+        }
         return fallback;
+    }
+}
+
+async function readApiJson(response, fallback) {
+    const text = await response.text();
+    if (!text) {
+        if (response.ok) return null;
+        throw new Error(fallback);
+    }
+
+    try {
+        const payload = JSON.parse(text);
+        if (!response.ok) {
+            throw new Error(payload.error || payload.message || fallback);
+        }
+        return payload;
+    } catch (err) {
+        if (err instanceof SyntaxError) {
+            if (text.includes("Cannot GET") || text.includes("Cannot POST") || text.includes("Cannot PUT") || text.includes("Cannot DELETE")) {
+                throw new Error("This route is missing on the Render backend. Redeploy the backend from the backend folder.");
+            }
+            throw new Error(fallback);
+        }
+        throw err;
     }
 }
 
@@ -215,7 +244,7 @@ function loadWelcomeName() {
     const userId = localStorage.getItem("userId");
     if (userId) {
         fetch(`${backendUrl}/api/admin/profile/${userId}`)
-            .then(res => res.json())
+            .then(res => readApiJson(res, "Unable to load admin profile."))
             .then(data => {
                 if (data.name) {
                     welcomeText.innerText = `Welcome, ${data.name}!`;
@@ -265,7 +294,7 @@ async function updateDashboardStats(filterType = 'recent', date = null) {
             });
             return;
         }
-        const stats = await response.json();
+        const stats = await readApiJson(response, 'Unable to load dashboard stats.');
         
         if (document.getElementById("totalAppointments")) document.getElementById("totalAppointments").textContent = stats.appointments;
         if (document.getElementById("totalDoctors")) document.getElementById("totalDoctors").textContent = stats.doctors;
@@ -366,7 +395,7 @@ async function loadRecentActivity(filterType = 'recent', date = null, updateChar
             setTableMessage(document.getElementById("recentAppointmentsTable"), 9, message);
             return;
         }
-        const { appointments, customers } = await response.json();
+        const { appointments = [], customers = [] } = await readApiJson(response, 'Unable to load recent activity.') || {};
         
         // Populate Appointments
         const apptTbody = document.getElementById("recentAppointmentsTable");
@@ -447,7 +476,7 @@ async function loadAllAppointmentsRegistry(filterType = 'all', date = null) {
             setTableMessage(tbody, 9, message);
             return;
         }
-        const { appointments } = await response.json();
+        const { appointments = [] } = await readApiJson(response, 'Unable to load appointments.') || {};
 
         tbody.innerHTML = appointments.length ? appointments.map(appt => {
             return `
@@ -490,7 +519,8 @@ async function loadDoctorsRegistry() {
             setTableMessage(tbody, 8, message);
             return;
         }
-        const doctors = await response.json();
+        const doctorsPayload = await readApiJson(response, 'Unable to load doctors.');
+        const doctors = Array.isArray(doctorsPayload) ? doctorsPayload : [];
 
         tbody.innerHTML = doctors.length ? doctors.map(doc => `
             <tr>
@@ -530,7 +560,8 @@ async function loadAdminsRegistry() {
             setTableMessage(tbody, 6, message);
             return;
         }
-        const admins = await response.json();
+        const adminsPayload = await readApiJson(response, 'Unable to load admins.');
+        const admins = Array.isArray(adminsPayload) ? adminsPayload : [];
 
         tbody.innerHTML = admins.length ? admins.map(admin => {
             const isSelf = admin.id === currentAdminId;
@@ -574,14 +605,8 @@ async function loadAllUsersPageData() {
 
     try {
         const response = await fetch(`${backendUrl}/api/admin/users`);
-        const payload = await response.json();
+        const payload = await readApiJson(response, 'Unable to load patient registry.');
         const users = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
-
-        if (!response.ok) {
-            const errorMessage = payload?.error || payload?.message || 'Unable to load patient registry.';
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center">${errorMessage}</td></tr>`;
-            return;
-        }
 
         tbody.innerHTML = users.length ? users.map(cust => `
             <tr>
@@ -602,7 +627,7 @@ async function loadAllUsersPageData() {
         `).join('') : '<tr><td colspan="9" style="text-align:center">No patients found.</td></tr>';
     } catch (err) {
         console.error("Error loading users page:", err);
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center">Unable to load patients. Check backend connection.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center">${err.message || "Unable to load patients. Check backend connection."}</td></tr>`;
     }
 }
 
@@ -619,7 +644,7 @@ window.openEditAdminModal = async function(adminId) {
 
     try {
         const response = await fetch(`${backendUrl}/api/admin/profile/${adminId}`);
-        const admin = await response.json();
+        const admin = await readApiJson(response, "Unable to load admin profile.");
 
         if (admin.email === SUPER_ADMIN_EMAIL) {
             return showAdminModal("Access Denied", "The Super Administrator account cannot be modified by other administrators.", "error");
@@ -642,7 +667,10 @@ window.openEditAdminModal = async function(adminId) {
         if (deleteBtn) deleteBtn.onclick = () => window.deleteAdmin(admin.id);
 
         modal.style.display = "flex";
-    } catch (err) { console.error("Admin edit load error:", err); }
+    } catch (err) {
+        console.error("Admin edit load error:", err);
+        showAdminModal("Load Error", err.message || "Unable to load admin profile.", "error");
+    }
 };
 
 window.toggleAdminSuspension = async function(id, currentStatus) {
@@ -679,10 +707,12 @@ window.deleteAdmin = async function(id) {
                 loadAdminsRegistry();
                 document.getElementById("editAdminModal").style.display = "none";
             } else {
-                const result = await res.json();
-                showAdminModal("Error", result.error || "Failed to remove admin.", "error");
+                showAdminModal("Error", await readApiError(res, "Failed to remove admin."), "error");
             }
-        } catch (err) { console.error("Delete error:", err); }
+        } catch (err) {
+            console.error("Delete error:", err);
+            showAdminModal("Error", err.message || "Failed to remove admin.", "error");
+        }
     });
 };
 
@@ -700,8 +730,15 @@ window.openEditUserModal = async function(userId) {
             fetch(`${backendUrl}/api/user/${userId}/appointments`)
         ]);
 
-        const user = await userResponse.json();
-        const appointments = await appointmentsResponse.json();
+        const user = await readApiJson(userResponse, "Unable to load patient profile.");
+        let appointments = [];
+        try {
+            appointments = await readApiJson(appointmentsResponse, "Unable to load appointment history.");
+        } catch (err) {
+            if (appointmentsTable) {
+                appointmentsTable.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 16px;">${err.message}</td></tr>`;
+            }
+        }
 
         document.getElementById("editUserId").value = user.id;
         document.getElementById("editUserUserId").value = user.user_id || "";
@@ -743,7 +780,7 @@ window.openEditUserModal = async function(userId) {
                     </td>
                 </tr>
             `).join('') : '<tr><td colspan="6" style="text-align:center; padding: 16px;">No appointments found for this patient.</td></tr>';
-        } else {
+        } else if (appointmentsTable && !appointmentsTable.innerHTML.trim()) {
             appointmentsTable.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 16px;">Unable to load appointment history.</td></tr>`;
         }
 
@@ -751,8 +788,9 @@ window.openEditUserModal = async function(userId) {
     } catch (err) {
         console.error("User edit load error:", err);
         if (appointmentsTable) {
-            appointmentsTable.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 16px;">Unable to load appointment history.</td></tr>`;
+            appointmentsTable.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 16px;">${err.message || "Unable to load appointment history."}</td></tr>`;
         }
+        showAdminModal("Load Error", err.message || "Unable to load patient profile.", "error");
     }
 };
 
@@ -788,8 +826,15 @@ window.openEditDoctorModal = async function(docId) {
             fetch(`${backendUrl}/api/doctor/appointments?doctorId=${encodeURIComponent(docId)}`)
         ]);
 
-        const doc = await docRes.json();
-        const appointments = await apptRes.json();
+        const doc = await readApiJson(docRes, "Unable to load doctor profile.");
+        let appointments = [];
+        try {
+            appointments = await readApiJson(apptRes, "Unable to load doctor appointment history.");
+        } catch (err) {
+            if (appointmentsTable) {
+                appointmentsTable.innerHTML = `<tr><td colspan="6" class="history-empty">${err.message}</td></tr>`;
+            }
+        }
 
         document.getElementById("editDocIdHidden").value = doc.id;
         document.getElementById("editDocDocId").value = doc.doc_id || "";
@@ -847,12 +892,15 @@ window.openEditDoctorModal = async function(docId) {
                     </td>
                 </tr>
             `).join('') : '<tr><td colspan="6" class="history-empty">No clinical records found for this doctor.</td></tr>';
-        } else {
+        } else if (appointmentsTable && !appointmentsTable.innerHTML.trim()) {
             appointmentsTable.innerHTML = '<tr><td colspan="6" class="history-empty">Unable to load history.</td></tr>';
         }
 
         modal.style.display = "flex";
-    } catch (err) { console.error("Doctor edit load error:", err); }
+    } catch (err) {
+        console.error("Doctor edit load error:", err);
+        showAdminModal("Load Error", err.message || "Unable to load doctor profile.", "error");
+    }
 };
 
 window.toggleDoctorSuspension = async function(id, currentStatus) {
@@ -884,10 +932,12 @@ window.deleteDoctor = async function(id) {
                 loadDoctorsRegistry();
                 document.getElementById("editDoctorModal").style.display = "none";
             } else {
-                const result = await res.json();
-                showAdminModal("Error", result.error || "Failed to delete profile.", "error");
+                showAdminModal("Error", await readApiError(res, "Failed to delete profile."), "error");
             }
-        } catch (err) { console.error("Delete error:", err); }
+        } catch (err) {
+            console.error("Delete error:", err);
+            showAdminModal("Error", err.message || "Failed to delete profile.", "error");
+        }
     });
 };
 
@@ -901,10 +951,12 @@ window.deleteUser = async function(id) {
                 const userModal = document.getElementById("editUserModal");
                 if (userModal) userModal.style.display = "none";
             } else {
-                const result = await res.json();
-                showAdminModal("Error", result.error || "Failed to delete user.", "error");
+                showAdminModal("Error", await readApiError(res, "Failed to delete user."), "error");
             }
-        } catch (err) { console.error("Delete error:", err); }
+        } catch (err) {
+            console.error("Delete error:", err);
+            showAdminModal("Error", err.message || "Failed to delete user.", "error");
+        }
     });
 };
 
@@ -920,7 +972,7 @@ window.openEditModal = async function(apptId) {
 
     try {
         const response = await fetch(`${backendUrl}/api/appointments/${apptId}`);
-        const appt = await response.json();
+        const appt = await readApiJson(response, "Unable to load appointment details.");
         
         // Security Logic: Block modification of completed history
         if (appt.status && appt.status.toLowerCase() === 'completed') {
@@ -936,7 +988,8 @@ window.openEditModal = async function(apptId) {
 
         if (allDoctorsForEdit.length === 0) {
             const docRes = await fetch(`${backendUrl}/api/doctors`);
-            allDoctorsForEdit = await docRes.json();
+            allDoctorsForEdit = await readApiJson(docRes, "Unable to load doctors.");
+            if (!Array.isArray(allDoctorsForEdit)) allDoctorsForEdit = [];
         }
         
         // Set Specialty Value (Matches hardcoded list in HTML)
@@ -957,7 +1010,10 @@ window.openEditModal = async function(apptId) {
         populateDoctors(appt.doctor_type, appt.doctor_id);
 
         modal.style.display = "flex";
-    } catch (err) { console.error("Edit load error:", err); }
+    } catch (err) {
+        console.error("Edit load error:", err);
+        showAdminModal("Load Error", err.message || "Unable to load appointment details.", "error");
+    }
 };
 
 window.deleteAppointment = async function(id) {
@@ -979,7 +1035,7 @@ window.quickStatusUpdate = async function(id, newStatus) {
     showAdminModal("Confirm Update", `Change status to ${newStatus}?`, 'warning', async () => {
         try {
             const fetchRes = await fetch(`${backendUrl}/api/appointments/${id}`);
-            const appt = await fetchRes.json();
+            const appt = await readApiJson(fetchRes, "Unable to load appointment details.");
             
             const response = await fetch(`${backendUrl}/api/admin/appointments/${id}`, {
                 method: 'PUT',
@@ -997,8 +1053,10 @@ window.quickStatusUpdate = async function(id, newStatus) {
                 showAdminModal("Success", `Status changed to ${newStatus}`);
                 if (currentPage === "admin.html") loadRecentActivity('all');
                 if (currentPage === "allappointments.html") loadAllAppointmentsRegistry();
+            } else {
+                showAdminModal("Error", await readApiError(response, "Failed to update status"), 'error');
             }
-        } catch (err) { showAdminModal("Error", "Failed to update status", 'error'); }
+        } catch (err) { showAdminModal("Error", err.message || "Failed to update status", 'error'); }
     });
 };
 
@@ -1340,22 +1398,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-                const result = await res.json();
-                if (res.ok) {
-                    showAdminModal("Success", result.message);
-                    document.getElementById("editAppointmentModal").style.display = "none";
-                    if (currentPage === "admin.html") loadRecentActivity('all');
-                    if (currentPage === "allappointments.html") loadAllAppointmentsRegistry();
-                    if (currentPage === "alluser.html") {
-                        const activeUserId = document.getElementById("editUserId").value;
-                        if (activeUserId) window.openEditUserModal(activeUserId);
-                    }
-                    if (currentPage === "alldoctors.html") {
-                        const activeDocId = document.getElementById("editDocIdHidden").value;
-                        if (activeDocId) window.openEditDoctorModal(activeDocId);
-                    }
-                } else { showAdminModal("Error", result.error, 'error'); }
-            } catch (err) { console.error("Update error:", err); }
+                const result = await readApiJson(res, "Unable to save appointment changes.");
+                showAdminModal("Success", result?.message || "Appointment updated successfully.");
+                document.getElementById("editAppointmentModal").style.display = "none";
+                if (currentPage === "admin.html") loadRecentActivity('all');
+                if (currentPage === "allappointments.html") loadAllAppointmentsRegistry();
+                if (currentPage === "alluser.html") {
+                    const activeUserId = document.getElementById("editUserId").value;
+                    if (activeUserId) window.openEditUserModal(activeUserId);
+                }
+                if (currentPage === "alldoctors.html") {
+                    const activeDocId = document.getElementById("editDocIdHidden").value;
+                    if (activeDocId) window.openEditDoctorModal(activeDocId);
+                }
+            } catch (err) {
+                console.error("Update error:", err);
+                showAdminModal("Error", err.message || "Update failed", 'error');
+            }
         });
     }
 
@@ -1461,8 +1520,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     showAdminModal("Success", "Doctor profile updated successfully.");
                     document.getElementById("editDoctorModal").style.display = "none";
                     loadDoctorsRegistry();
-                } else { const result = await res.json(); showAdminModal("Error", result.error, 'error'); }
-            } catch (err) { console.error("Update error:", err); }
+                } else {
+                    showAdminModal("Error", await readApiError(res, "Unable to update doctor profile."), 'error');
+                }
+            } catch (err) {
+                console.error("Update error:", err);
+                showAdminModal("Error", err.message || "Unable to update doctor profile.", 'error');
+            }
         });
     }
 
@@ -1506,8 +1570,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     showAdminModal("Success", "Admin profile updated successfully.");
                     document.getElementById("editAdminModal").style.display = "none";
                     loadAdminsRegistry();
-                } else { const result = await res.json(); showAdminModal("Error", result.error, 'error'); }
-            } catch (err) { console.error("Update error:", err); }
+                } else {
+                    showAdminModal("Error", await readApiError(res, "Unable to update admin profile."), 'error');
+                }
+            } catch (err) {
+                console.error("Update error:", err);
+                showAdminModal("Error", err.message || "Unable to update admin profile.", 'error');
+            }
         });
     }
 
@@ -1568,13 +1637,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-                const result = await res.json();
                 if (res.ok) {
                     showAdminModal("Success", "Profile updated successfully.");
                     document.getElementById("editUserModal").style.display = "none";
                     loadAllUsersPageData();
-                } else { showAdminModal("Error", result.error, 'error'); }
-            } catch (err) { console.error("Update error:", err); }
+                } else {
+                    showAdminModal("Error", await readApiError(res, "Unable to update patient profile."), 'error');
+                }
+            } catch (err) {
+                console.error("Update error:", err);
+                showAdminModal("Error", err.message || "Unable to update patient profile.", 'error');
+            }
         });
     }
 
@@ -1671,7 +1744,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ name, email, password, role: 'Doctor', specialty })
                 });
-                const result = await response.json();
                 if (response.ok) {
                     showAdminModal("Success", "Doctor account created successfully!");
                     addDoctorForm.reset();
@@ -1680,9 +1752,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         window.location.href = "alldoctors.html";
                     }, 2000);
                 } else {
-                    showAdminModal("Error", result.error || "Failed to register doctor.", 'error');
+                    showAdminModal("Error", await readApiError(response, "Failed to register doctor."), 'error');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(err);
+                showAdminModal("Error", err.message || "Failed to register doctor.", 'error');
+            }
         });
     }
 
@@ -1714,7 +1789,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ name, email, password, role: 'User', mobile })
                 });
-                const result = await response.json();
                 if (response.ok) {
                     showAdminModal("Success", "Patient profile registered successfully!");
                     addUserForm.reset();
@@ -1723,9 +1797,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         window.location.href = "alluser.html";
                     }, 2000);
                 } else {
-                    showAdminModal("Error", result.error || "Failed to register patient.", 'error');
+                    showAdminModal("Error", await readApiError(response, "Failed to register patient."), 'error');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(err);
+                showAdminModal("Error", err.message || "Failed to register patient.", 'error');
+            }
         });
     }
 
@@ -1757,14 +1834,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ currentPassword, newPassword })
                 });
-                const result = await response.json();
                 if (response.ok) {
                     showAdminModal("Success", "Admin password updated successfully.");
                     adminPasswordForm.reset();
                 } else {
-                    showAdminModal("Action Failed", result.error || "Incorrect current password.", 'error');
+                    showAdminModal("Action Failed", await readApiError(response, "Incorrect current password."), 'error');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error(err);
+                showAdminModal("Action Failed", err.message || "Unable to update password.", 'error');
+            }
         });
     }
 
@@ -1817,18 +1896,12 @@ async function performGlobalSearch() {
 
     try {
         const response = await fetch(`${backendUrl}/api/admin/global-lookup?query=${encodeURIComponent(query)}`);
-        const result = await response.json();
-
-        if (!response.ok) {
-            dropdown.innerHTML = `<div class="search-no-results">${result.error || "No match found."}</div>`;
-            dropdown.classList.add("active");
-            return;
-        }
+        const result = await readApiJson(response, "No match found.");
 
         showGlobalSearchResult(result.type, result.data);
     } catch (err) {
         console.error("Global search error:", err);
-        dropdown.innerHTML = `<div class="search-no-results">Error connecting to search service.</div>`;
+        dropdown.innerHTML = `<div class="search-no-results">${err.message || "Error connecting to search service."}</div>`;
         dropdown.classList.add("active");
     }
 }
@@ -1877,19 +1950,18 @@ document.addEventListener("click", (e) => {
 
             try {
                 const res = await fetch(`${backendUrl}/api/admin/search-account?uniqueId=${uniqueId}&email=${email}`);
-                const data = await res.json();
-                if (res.ok) {
-                    document.getElementById("foundAccountId").value = data.id;
-                    document.getElementById("foundAccountTable").value = data.table;
-                    document.getElementById("displayAccountName").innerText = data.name;
-                    document.getElementById("displayAccountEmail").innerText = data.email;
-                    document.getElementById("displayAccountType").innerText = data.role;
-                    document.getElementById("accountDetailsSection").style.display = "block";
-                } else {
-                    showAdminModal("Search Failed", data.error, "error");
-                    document.getElementById("accountDetailsSection").style.display = "none";
-                }
-            } catch (err) { console.error(err); }
+                const data = await readApiJson(res, "Unable to find account.");
+                document.getElementById("foundAccountId").value = data.id;
+                document.getElementById("foundAccountTable").value = data.table;
+                document.getElementById("displayAccountName").innerText = data.name;
+                document.getElementById("displayAccountEmail").innerText = data.email;
+                document.getElementById("displayAccountType").innerText = data.role;
+                document.getElementById("accountDetailsSection").style.display = "block";
+            } catch (err) {
+                console.error(err);
+                showAdminModal("Search Failed", err.message || "Unable to find account.", "error");
+                document.getElementById("accountDetailsSection").style.display = "none";
+            }
         });
     }
 
@@ -1911,14 +1983,15 @@ document.addEventListener("click", (e) => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ id, table, newPassword })
                 });
-                const result = await res.json();
-                if (res.ok) {
-                    showAdminModal("Success", result.message);
-                    forcePasswordForm.reset();
-                    document.getElementById("accountDetailsSection").style.display = "none";
-                    accountSearchForm.reset();
-                } else { showAdminModal("Access Denied", result.error, "error"); }
-            } catch (err) { console.error(err); }
+                const result = await readApiJson(res, "Unable to reset password.");
+                showAdminModal("Success", result?.message || "Password reset successfully.");
+                forcePasswordForm.reset();
+                document.getElementById("accountDetailsSection").style.display = "none";
+                accountSearchForm.reset();
+            } catch (err) {
+                console.error(err);
+                showAdminModal("Access Denied", err.message || "Unable to reset password.", "error");
+            }
         });
     }
 
@@ -1937,7 +2010,6 @@ document.addEventListener("click", (e) => {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ name, email, password, role: 'Admin' })
                 });
-                const result = await response.json();
                 if (response.ok) {
                     showAdminModal("Success", "Admin registered successfully!");
                     addAdminForm.reset();
@@ -1946,10 +2018,11 @@ document.addEventListener("click", (e) => {
                         window.location.href = "alladmins.html";
                     }, 2000);
                 } else {
-                    showAdminModal("Error", result.error || "Failed to register admin.", 'error');
+                    showAdminModal("Error", await readApiError(response, "Failed to register admin."), 'error');
                 }
             } catch (err) {
                 console.error("Signup error:", err);
+                showAdminModal("Error", err.message || "Failed to register admin.", 'error');
             }
         });
     }

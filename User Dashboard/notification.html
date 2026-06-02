@@ -269,6 +269,20 @@
         let showAll = false;
         let pendingModalAction = null;
 
+        async function readApiMessage(response, fallback) {
+            const text = await response.text();
+            if (!text) return fallback;
+            try {
+                const data = JSON.parse(text);
+                return data.error || data.message || fallback;
+            } catch (e) {
+                if (text.includes("Cannot GET")) {
+                    return "Notifications route is missing on the Render backend. Redeploy the backend from the backend folder.";
+                }
+                return fallback;
+            }
+        }
+
         // Fetch and display live notifications
         async function fetchNotifications() {
             if (userId === "mock_user") {
@@ -288,11 +302,7 @@
                     displayNotifications();
                     markNotificationsAsRead();
                 } else {
-                    let message = "Unable to load notifications.";
-                    try {
-                        const errorData = await res.json();
-                        message = errorData.error || message;
-                    } catch (e) {}
+                    const message = await readApiMessage(res, "Unable to load notifications.");
                     const container = document.querySelector(".notification_set");
                     if (container) {
                         container.innerHTML = `<div class="notification" style="text-align: center; padding: 20px;"><p>${message}</p></div>`;

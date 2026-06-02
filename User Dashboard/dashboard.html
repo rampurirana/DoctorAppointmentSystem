@@ -560,6 +560,28 @@
         let currentFilter = 'all';
         let showAllAppointments = false;
 
+        async function readApiMessage(response, fallback) {
+            const text = await response.text();
+            if (!text) return fallback;
+            try {
+                const data = JSON.parse(text);
+                return data.error || data.message || fallback;
+            } catch (e) {
+                if (text.includes("Cannot GET")) {
+                    return "This Render backend is missing the user appointments route. Redeploy the backend from the backend folder.";
+                }
+                return fallback;
+            }
+        }
+
+        function setAppointmentsMessage(message) {
+            const tbody = document.querySelector('.details table tbody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="padding: 20px; color: var(--secondary-color);">${message}</td></tr>`;
+            }
+            renderStats({ success: 0, pending: 0, reject: 0 });
+        }
+
         // Parse date and time to timestamp for accurate sorting
         function parseDateTime(dateStr, slotStr) {
             if (!dateStr) return 0;
@@ -632,27 +654,17 @@
                 // Added cache buster to ensure fresh data after database update
                 const res = await fetch(`${backendUrl}/api/user/${userId}/appointments?t=${Date.now()}`);
                 if (res.ok) {
-                    allAppointmentsData = await res.json();
+                    const data = await res.json();
+                    allAppointmentsData = Array.isArray(data) ? data : [];
                     console.log("Verified Backend Data:", allAppointmentsData);
                     filterAndRender();
                 } else {
-                    let message = "Failed to fetch live appointments from server.";
-                    try {
-                        const errorData = await res.json();
-                        message = errorData.error || message;
-                    } catch (e) {}
-                    const tbody = document.querySelector('.details table tbody');
-                    if (tbody) {
-                        tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="padding: 20px; color: var(--secondary-color);">${message}</td></tr>`;
-                    }
-                    renderStats({ success: 0, pending: 0, reject: 0 });
+                    const message = await readApiMessage(res, "Failed to fetch live appointments from server.");
+                    setAppointmentsMessage(message);
                 }
             } catch (err) {
                 console.error(err);
-                const tbody = document.querySelector('.details table tbody');
-                if (tbody) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="padding: 20px; color: var(--secondary-color);">Failed to fetch live appointments from server.</td></tr>`;
-                }
+                setAppointmentsMessage("Could not connect to the appointments server.");
             }
         }
 

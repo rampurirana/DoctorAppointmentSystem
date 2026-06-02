@@ -433,12 +433,7 @@
                             errMsg = errorData.error;
                         } catch(e) {}
                         
-                        showLoginModal("Login Failed", errMsg + "\n\nUse 'Direct Login' (Offline Mode) to test?", () => {
-                            localStorage.clear();
-                            localStorage.setItem("userId", "mock_user");
-                            localStorage.setItem("userName", "Demo Patient");
-                            window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
-                        });
+                        showLoginModal("Login Failed", errMsg);
                         return;
                     }
 
@@ -469,12 +464,7 @@
                     }
                 } catch (err) {
                     console.error(err);
-                    showLoginModal("Connection Error", "Backend server is offline. Use 'Direct Login' (Mock Mode)?", () => {
-                        localStorage.clear();
-                        localStorage.setItem("userId", "mock_user");
-                        localStorage.setItem("userName", "Demo Patient");
-                        window.location.href = "User Dashboard/dashboard.html?t=" + Date.now();
-                    });
+                    showLoginModal("Connection Error", "Could not connect to the backend server. Please try again later.");
                 }
             });
         }
